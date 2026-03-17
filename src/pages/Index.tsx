@@ -1,18 +1,17 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, useInView } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Folder, FileAudio, Users } from "lucide-react";
-import { kits, producers, trendingTags } from "@/data/mockData";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote } from "lucide-react";
+import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
 import KitCover from "@/components/KitCover";
 import { Link } from "react-router-dom";
-import { Kit } from "@/data/mockData";
 
 interface HomePageProps {
   onPlay: (kit: Kit) => void;
 }
 
-/* Animated counter — 2s duration */
+/* ── Animated counter ── */
 const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
@@ -36,59 +35,67 @@ const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-/* Floating particles */
-const Particles = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    {[...Array(18)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full bg-puchk-orange/30"
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          width: `${2 + Math.random() * 3}px`,
-          height: `${2 + Math.random() * 3}px`,
-        }}
-        animate={{ y: [-15, 15, -15], x: [-8, 8, -8], opacity: [0.15, 0.5, 0.15] }}
-        transition={{ repeat: Infinity, duration: 4 + Math.random() * 5, delay: Math.random() * 4, ease: "easeInOut" }}
-      />
-    ))}
-  </div>
-);
+/* ── Floating particles ── */
+const Particles = () => {
+  const particles = useMemo(() =>
+    [...Array(14)].map((_, i) => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: 2 + Math.random() * 2,
+      duration: 5 + Math.random() * 7,
+      delay: Math.random() * 5,
+    })),
+    []
+  );
 
-/* Waveform SVG background */
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full bg-puchk-orange/20"
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
+          animate={{ y: [-15, 15, -15], x: [-8, 8, -8], opacity: [0.1, 0.4, 0.1] }}
+          transition={{ repeat: Infinity, duration: p.duration, delay: p.delay, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ── Waveform SVG background ── */
 const WaveformBG = () => (
-  <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 1200 400">
-    {[0, 1, 2, 3, 4].map((i) => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-60" preserveAspectRatio="none" viewBox="0 0 1200 400">
+    {[0, 1, 2, 3].map((i) => (
       <motion.path
         key={i}
-        d={`M0,${200 + i * 30} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 30 + (j % 2 === 0 ? -30 : 30)} ${(j + 1) * 100},${200 + i * 30}`).join(" ")}`}
+        d={`M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? -25 : 25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`}
         fill="none"
-        stroke="rgba(255,107,26,0.06)"
-        strokeWidth="1.5"
+        stroke="rgba(255,107,26,0.05)"
+        strokeWidth="1"
         animate={{
           d: [
-            `M0,${200 + i * 30} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 30 + (j % 2 === 0 ? -30 : 30)} ${(j + 1) * 100},${200 + i * 30}`).join(" ")}`,
-            `M0,${200 + i * 30} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 30 + (j % 2 === 0 ? 30 : -30)} ${(j + 1) * 100},${200 + i * 30}`).join(" ")}`,
+            `M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? -25 : 25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`,
+            `M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? 25 : -25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`,
           ],
         }}
-        transition={{ repeat: Infinity, repeatType: "reverse", duration: 6 + i * 0.8, ease: "easeInOut" }}
+        transition={{ repeat: Infinity, repeatType: "reverse", duration: 7 + i, ease: "easeInOut" }}
       />
     ))}
   </svg>
 );
 
-/* Scroll reveal wrapper */
+/* ── Scroll reveal wrapper ── */
 const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 30 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -96,7 +103,56 @@ const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React
   );
 };
 
-/* Hero Slides */
+/* ── Mini player component ── */
+const MiniPlayer = ({ kit, onPlay }: { kit: Kit; onPlay: (k: Kit) => void }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) { setIsPlaying(false); return 0; }
+        return p + 0.5;
+      });
+    }, 50);
+    return () => clearInterval(timer);
+  }, [isPlaying]);
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 group">
+      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+        <KitCover genre={kit.genre} title="" producer="" aspectRatio="1/1" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold truncate">{kit.name}</div>
+        <div className="text-[10px] text-secondary-puchk">{kit.producer}</div>
+      </div>
+      <button
+        onClick={() => { setIsPlaying(!isPlaying); onPlay(kit); }}
+        className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-puchk-orange transition-colors flex-shrink-0 btn-press"
+      >
+        {isPlaying ? <Pause className="w-3.5 h-3.5 text-white fill-white" /> : <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />}
+      </button>
+      <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden flex-shrink-0">
+        <div className="h-full bg-puchk-orange rounded-full transition-all" style={{ width: `${progress}%` }} />
+      </div>
+      <span className="text-[10px] text-white/30 w-8 text-right flex-shrink-0">0:30</span>
+    </div>
+  );
+};
+
+/* ── Testimonials data ── */
+const testimonials = [
+  { text: "PUCHK a changé ma façon de vendre mes kits.", user: "@KXZMA", role: "Vendeur", emoji: "🔥" },
+  { text: "Les kits sont de qualité studio. Rien à voir avec les autres marketplaces.", user: "@xMelo", role: "Acheteur", emoji: "🎧" },
+  { text: "J'ai fait mes premiers 1000€ en 2 semaines sur PUCHK.", user: "@OZKR", role: "Vendeur", emoji: "💰" },
+  { text: "L'interface est propre, le téléchargement est instantané.", user: "@BeatsByJay", role: "Acheteur", emoji: "⚡" },
+  { text: "Le Puchk Tool m'a fait gagner des heures sur l'organisation de mes kits.", user: "@mochiprod", role: "Vendeur", emoji: "🛠" },
+  { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", emoji: "✨" },
+];
+
+/* ── Hero slides config ── */
 const heroSlides = [
   { id: "kit-week", type: "kit" as const },
   { id: "puchk-tool", type: "tool" as const },
@@ -106,20 +162,17 @@ const heroSlides = [
 
 const HomePage = ({ onPlay }: HomePageProps) => {
   const weekKit = kits[0];
-  const promoKit = kits[10]; // Pastel Dreams
-  const hotKits = [...kits].sort((a, b) => b.sales - a.sales).slice(0, 6);
+  const promoKit = kits[10];
+  const hotKits = [...kits].sort((a, b) => b.sales - a.sales).slice(0, 8);
   const staffPicks = [kits[0], kits[2], kits[8]];
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hoveringHero, setHoveringHero] = useState(false);
 
-  // Auto-rotation
   useEffect(() => {
     if (hoveringHero) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((c) => (c + 1) % heroSlides.length);
-    }, 6000);
+    const timer = setInterval(() => setCurrentSlide((c) => (c + 1) % heroSlides.length), 6000);
     return () => clearInterval(timer);
   }, [hoveringHero]);
 
@@ -131,28 +184,22 @@ const HomePage = ({ onPlay }: HomePageProps) => {
     switch (heroSlides[slideIndex].type) {
       case "kit":
         return (
-          <motion.div
-            className="w-full max-w-sm rounded-2xl overflow-hidden border border-puchk-orange/20 animate-border-glow puchk-shadow"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            key="kit"
-          >
-            <div className="glass p-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-3 flex items-center gap-1">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] animate-border-glow puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="kit">
+            <div className="bg-white/[0.03] backdrop-blur-xl p-5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-4 flex items-center gap-1.5">
                 <Star className="w-3 h-3 fill-yellow-400" /> KIT DE LA SEMAINE
               </div>
-              <div className="rounded-xl overflow-hidden mb-3 relative group">
+              <div className="rounded-xl overflow-hidden mb-4 relative group">
                 <KitCover genre={weekKit.genre} title={weekKit.name} producer={weekKit.producer} aspectRatio="1/1" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
-                  <button onClick={() => onPlay(weekKit)} className="w-16 h-16 rounded-full bg-puchk-orange/90 backdrop-blur flex items-center justify-center shadow-[0_0_25px_rgba(255,107,26,0.5)] btn-press">
-                    <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                  <button onClick={() => onPlay(weekKit)} className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
+                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
                   </button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-extrabold uppercase">{weekKit.name}</h3>
+                  <h3 className="text-lg font-bold">{weekKit.name}</h3>
                   <p className="text-xs text-secondary-puchk">{weekKit.producer}</p>
                   <div className="flex items-center gap-1 mt-1">
                     <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
@@ -161,7 +208,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-puchk-orange">{weekKit.price}€</div>
-                  <Link to={`/kit/${weekKit.id}`} className="text-[10px] text-puchk-orange hover:underline uppercase tracking-wider">Acheter →</Link>
+                  <Link to={`/kit/${weekKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Découvrir →</Link>
                 </div>
               </div>
             </div>
@@ -170,16 +217,9 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "tool":
         return (
-          <motion.div
-            className="w-full max-w-sm rounded-2xl overflow-hidden border border-puchk-orange/20 puchk-shadow glass p-6"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            key="tool"
-          >
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] puchk-shadow bg-white/[0.03] backdrop-blur-xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="tool">
             <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4">🛠 PUCHK TOOL</div>
-            {/* Decorative file tree */}
-            <div className="bg-puchk-deep/50 rounded-xl p-4 mb-4 space-y-2 border border-[rgba(255,107,26,0.08)]">
+            <div className="bg-black/30 rounded-xl p-4 mb-4 space-y-2 border border-white/[0.04]">
               <div className="flex items-center gap-2 text-xs text-puchk-orange"><Folder className="w-3.5 h-3.5" /> My Drum Kit/</div>
               <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> Kicks/</div>
               <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> kick_hard_01.wav</div>
@@ -187,9 +227,9 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> 808_sub_distorted.wav</div>
               <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> Hi-Hats/</div>
             </div>
-            <h3 className="text-lg font-extrabold uppercase mb-1">Crée ton drumkit de A à Z</h3>
-            <p className="text-xs text-secondary-puchk mb-4">Organise tes sons, personnalise tes dossiers pour FL Studio, et exporte un kit prêt à vendre.</p>
-            <a href="#" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold uppercase rounded-xl hover:bg-puchk-orange-hover spring-transition btn-press">
+            <h3 className="text-lg font-bold mb-1">Crée ton drumkit de A à Z</h3>
+            <p className="text-xs text-secondary-puchk mb-4 leading-relaxed">Organise tes sons, personnalise pour FL Studio, et exporte un kit prêt à vendre.</p>
+            <a href="#" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
               Ouvrir Puchk Tool <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </motion.div>
@@ -197,19 +237,13 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "producers":
         return (
-          <motion.div
-            className="w-full max-w-sm rounded-2xl overflow-hidden border border-puchk-orange/20 puchk-shadow glass p-6"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            key="producers"
-          >
-            <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4 flex items-center gap-1">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] puchk-shadow bg-white/[0.03] backdrop-blur-xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="producers">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" /> COMMUNAUTÉ
             </div>
-            <h3 className="text-2xl font-extrabold uppercase mb-2">Rejoins 850+ producteurs</h3>
-            <p className="text-xs text-secondary-puchk mb-4">Publie tes kits, touche 85% de chaque vente, et rejoins la communauté de beatmakers.</p>
-            <div className="flex gap-4 mb-5">
+            <h3 className="text-2xl font-bold mb-2">Rejoins 850+ producteurs</h3>
+            <p className="text-sm text-secondary-puchk mb-5 leading-relaxed">Publie tes kits, touche 85% de chaque vente.</p>
+            <div className="flex gap-5 mb-6">
               {[{ v: "850+", l: "Producteurs" }, { v: "25k+", l: "Ventes" }, { v: "85%", l: "Tu gardes" }].map((s) => (
                 <div key={s.l} className="text-center">
                   <div className="text-lg font-black text-puchk-orange">{s.v}</div>
@@ -217,7 +251,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 </div>
               ))}
             </div>
-            <Link to="/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold uppercase rounded-xl hover:bg-puchk-orange-hover spring-transition btn-press">
+            <Link to="/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
               Commencer à vendre <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </motion.div>
@@ -225,31 +259,25 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "promo":
         return (
-          <motion.div
-            className="w-full max-w-sm rounded-2xl overflow-hidden border border-puchk-orange/20 animate-border-glow puchk-shadow"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, type: "spring" }}
-            key="promo"
-          >
-            <div className="glass p-4">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
-              <div className="rounded-xl overflow-hidden mb-3 relative group">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] animate-border-glow puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="promo">
+            <div className="bg-white/[0.03] backdrop-blur-xl p-5">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-4 flex items-center gap-1">🆕 NOUVEAU</div>
+              <div className="rounded-xl overflow-hidden mb-4 relative group">
                 <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
-                  <button onClick={() => onPlay(promoKit)} className="w-16 h-16 rounded-full bg-puchk-orange/90 backdrop-blur flex items-center justify-center shadow-[0_0_25px_rgba(255,107,26,0.5)] btn-press">
-                    <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                  <button onClick={() => onPlay(promoKit)} className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
+                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
                   </button>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-extrabold uppercase">{promoKit.name}</h3>
+                  <h3 className="text-lg font-bold">{promoKit.name}</h3>
                   <p className="text-xs text-secondary-puchk">{promoKit.producer}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-puchk-orange">{promoKit.price}€</div>
-                  <Link to={`/kit/${promoKit.id}`} className="text-[10px] text-puchk-orange hover:underline uppercase tracking-wider">Voir →</Link>
+                  <Link to={`/kit/${promoKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Voir →</Link>
                 </div>
               </div>
             </div>
@@ -269,255 +297,303 @@ const HomePage = ({ onPlay }: HomePageProps) => {
     <div className="min-h-screen pt-16 page-enter">
       {/* ===== HERO CAROUSEL ===== */}
       <section
-        className="relative max-h-[70vh] min-h-[500px] flex items-center overflow-hidden"
+        className="relative min-h-[600px] max-h-[80vh] flex items-center overflow-hidden"
         onMouseEnter={() => setHoveringHero(true)}
         onMouseLeave={() => setHoveringHero(false)}
       >
+        {/* Background effects */}
         <WaveformBG />
         <Particles />
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/30 via-transparent to-[var(--bg-base)] z-[1]" />
+        
+        {/* Halo lumineux */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] animate-halo pointer-events-none" />
+        
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1]" />
+        <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
 
-        <div className="relative z-[2] max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 py-16">
+        <div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-16 py-20">
           {/* Left */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-xl">
             <motion.h1
-              className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-none"
+              className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
               {"PUCHK".split("").map((letter, i) => (
                 <motion.span
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1, type: "spring" }}
+                  transition={{ delay: i * 0.08, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="inline-block"
                 >
                   {letter}
                 </motion.span>
               ))}
             </motion.h1>
 
-            <motion.p
-              className="text-xl text-secondary-puchk mt-4 mb-8 max-w-md"
-              key={currentSlide}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {slideTexts[currentSlide].title}
-            </motion.p>
+            <AnimatePresence mode="wait">
+              <motion.p
+                className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed"
+                key={currentSlide}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {slideTexts[currentSlide].title}
+              </motion.p>
+            </AnimatePresence>
 
-            <motion.div className="flex gap-3 mb-10" key={`cta-${currentSlide}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
-              <Link to={slideTexts[currentSlide].cta1Link} className="px-6 py-3 bg-puchk-orange text-white font-bold text-sm rounded-xl hover:bg-puchk-orange-hover spring-transition shadow-[0_0_20px_rgba(255,107,26,0.3)] btn-press">
-                {slideTexts[currentSlide].cta1}
-              </Link>
-              <Link to={slideTexts[currentSlide].cta2Link} className="px-6 py-3 glass font-bold text-sm rounded-xl hover:text-puchk-orange spring-transition btn-press">
-                {slideTexts[currentSlide].cta2}
-              </Link>
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.div className="flex gap-3 mb-12" key={`cta-${currentSlide}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.1 }}>
+                <Link to={slideTexts[currentSlide].cta1Link} className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
+                  {slideTexts[currentSlide].cta1}
+                </Link>
+                <Link to={slideTexts[currentSlide].cta2Link} className="px-6 py-3 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+                  {slideTexts[currentSlide].cta2}
+                </Link>
+              </motion.div>
+            </AnimatePresence>
 
             {/* Stats */}
-            <div className="flex gap-8">
+            <div className="flex gap-10">
               {[
                 { value: 2400, label: "kits", suffix: "+" },
                 { value: 850, label: "producteurs", suffix: "+" },
                 { value: 25000, label: "ventes", suffix: "+" },
               ].map((s) => (
                 <div key={s.label}>
-                  <div className="text-2xl font-black">
+                  <div className="text-3xl font-black tracking-tight">
                     <AnimCounter target={s.value} suffix={s.suffix} />
                   </div>
-                  <div className="text-[10px] text-secondary-puchk uppercase tracking-widest">{s.label}</div>
+                  <div className="text-xs text-secondary-puchk mt-1">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Right - Carousel slides */}
-          <div className="w-full max-w-sm relative min-h-[380px] flex items-center justify-center">
-            <motion.div
-              key={currentSlide}
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
+          <div className="w-full max-w-sm relative min-h-[400px] flex items-center justify-center">
+            <AnimatePresence mode="wait">
               {renderSlideRight(currentSlide)}
-            </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
         {/* Carousel controls */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3">
-          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 spring-transition btn-press">
-            <ChevronLeft className="w-4 h-4" />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3">
+          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+            <ChevronLeft className="w-4 h-4 text-white/60" />
           </button>
           <div className="flex gap-2">
             {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`w-2 h-2 rounded-full spring-transition ${i === currentSlide ? "bg-puchk-orange w-6" : "bg-white/20 hover:bg-white/40"}`}
+                className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-8" : "bg-white/15 w-1.5 hover:bg-white/30"}`}
               />
             ))}
           </div>
-          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 spring-transition btn-press">
-            <ChevronRight className="w-4 h-4" />
+          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+            <ChevronRight className="w-4 h-4 text-white/60" />
           </button>
         </div>
       </section>
 
       {/* ===== TRENDING TAGS ===== */}
       <ScrollReveal>
-        <section className="bg-[var(--bg-deep)]/60 py-4">
-          <div className="max-w-7xl mx-auto px-6 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange flex-shrink-0">Tendances :</span>
-            {trendingTags.map((tag) => (
-              <button key={tag} className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--glass-border)] text-xs text-secondary-puchk hover:text-puchk-orange hover:border-puchk-orange/30 hover:bg-puchk-orange/5 spring-transition btn-press">
-                {tag}
-              </button>
-            ))}
-          </div>
-        </section>
-      </ScrollReveal>
-
-      <div className="section-divider" />
-
-      {/* ===== HOT THIS WEEK ===== */}
-      <ScrollReveal>
-        <section id="hot" className="max-w-7xl mx-auto px-6 py-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">🔥</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange">EN CE MOMENT</span>
-              </div>
-              <h2 className="text-3xl font-extrabold uppercase tracking-tight">Kits les plus vendus</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => scroll(-1)} className="w-10 h-10 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 spring-transition btn-press">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button onClick={() => scroll(1)} className="w-10 h-10 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 spring-transition btn-press">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div ref={scrollRef} className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none" }}>
-            {hotKits.map((kit, i) => (
-              <motion.div
-                key={kit.id}
-                className="min-w-[280px] max-w-[300px] snap-start flex-shrink-0"
-                initial={{ opacity: 0, y: 20 }}
+        <section className="bg-[var(--bg-warm)] py-5">
+          <div className="max-w-6xl mx-auto px-6 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange flex-shrink-0">Tendances</span>
+            {trendingTags.map((tag, i) => (
+              <motion.button
+                key={tag}
+                initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.05, duration: 0.5 }}
+                className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-xs text-secondary-puchk hover:text-puchk-orange hover:border-puchk-orange/20 hover:bg-puchk-orange/[0.05] transition-all duration-300 btn-press"
               >
-                <ProductCard kit={kit} onPlay={onPlay} />
-              </motion.div>
+                {tag}
+              </motion.button>
             ))}
           </div>
         </section>
       </ScrollReveal>
+
+      {/* ===== HOT THIS WEEK ===== */}
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <ScrollReveal>
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">en ce moment</span>
+              <h2 className="text-4xl font-black tracking-tight mt-1">Kits les plus vendus</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => scroll(-1)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+                <ChevronLeft className="w-5 h-5 text-white/50" />
+              </button>
+              <button onClick={() => scroll(1)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+                <ChevronRight className="w-5 h-5 text-white/50" />
+              </button>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        <div ref={scrollRef} className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none" }}>
+          {hotKits.map((kit, i) => (
+            <div key={kit.id} className="min-w-[260px] max-w-[280px] snap-start flex-shrink-0">
+              <ProductCard kit={kit} onPlay={onPlay} index={i} />
+            </div>
+          ))}
+        </div>
+
+        <ScrollReveal delay={0.2}>
+          <div className="mt-8 text-center">
+            <Link to="/marketplace" className="inline-flex items-center gap-2 text-sm text-secondary-puchk hover:text-puchk-orange transition-colors">
+              Voir tous les kits <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </ScrollReveal>
+      </section>
 
       <div className="section-divider" />
 
       {/* ===== STAFF PICKS ===== */}
-      <ScrollReveal>
-        <section className="max-w-7xl mx-auto px-6 py-16">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl text-yellow-400">⭐</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400">CURATED</span>
-          </div>
-          <h2 className="text-3xl font-extrabold uppercase tracking-tight mb-8">Staff Picks</h2>
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <ScrollReveal>
+          <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">curated</span>
+          <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Staff Picks</h2>
+        </ScrollReveal>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-            <Link to={`/kit/${staffPicks[0].id}`} className="lg:col-span-3 relative rounded-2xl overflow-hidden group">
-              <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="16/9" />
-              <div className="absolute top-4 left-4 z-[5] px-2.5 py-1 rounded-full bg-yellow-500/20 backdrop-blur-md border border-yellow-500/20">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <ScrollReveal className="lg:col-span-3">
+            <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group">
+              <div className="transition-transform duration-500 group-hover:scale-[1.02]">
+                <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="16/9" />
+              </div>
+              <div className="absolute top-4 left-4 z-[5] px-2.5 py-1 rounded-full bg-yellow-500/15 backdrop-blur-xl border border-yellow-500/15">
                 <span className="text-[10px] font-bold tracking-widest uppercase text-yellow-400">Staff Pick</span>
               </div>
               <div className="absolute bottom-6 left-6 z-[5]">
-                <h3 className="text-3xl font-extrabold uppercase tracking-tight text-white drop-shadow-lg">{staffPicks[0].name}</h3>
+                <h3 className="text-3xl font-black tracking-tight text-white drop-shadow-lg">{staffPicks[0].name}</h3>
                 <p className="text-sm text-white/60">{staffPicks[0].producer}</p>
                 <span className="text-xl font-black text-puchk-orange mt-2 inline-block">{staffPicks[0].price}€</span>
               </div>
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
-                <button onClick={(e) => { e.preventDefault(); onPlay(staffPicks[0]); }} className="w-16 h-16 rounded-full bg-puchk-orange/90 backdrop-blur flex items-center justify-center shadow-[0_0_25px_rgba(255,107,26,0.5)] btn-press">
+                <button onClick={(e) => { e.preventDefault(); onPlay(staffPicks[0]); }} className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
                   <Play className="w-7 h-7 text-white fill-white ml-0.5" />
                 </button>
               </div>
             </Link>
+          </ScrollReveal>
 
-            <div className="lg:col-span-2 flex flex-col gap-5">
-              {staffPicks.slice(1).map((kit, i) => (
-                <motion.div key={kit.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
-                  <ProductCard kit={kit} onPlay={onPlay} />
-                </motion.div>
-              ))}
-            </div>
+          <div className="lg:col-span-2 flex flex-col gap-5">
+            {staffPicks.slice(1).map((kit, i) => (
+              <ScrollReveal key={kit.id} delay={0.1 + i * 0.1}>
+                <ProductCard kit={kit} onPlay={onPlay} index={i} />
+              </ScrollReveal>
+            ))}
           </div>
-        </section>
-      </ScrollReveal>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ===== ÉCOUTE NOS KITS ===== */}
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <ScrollReveal>
+          <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">previews</span>
+          <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Écoute nos kits</h2>
+        </ScrollReveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {kits.slice(0, 8).map((kit, i) => (
+            <ScrollReveal key={kit.id} delay={i * 0.05}>
+              <MiniPlayer kit={kit} onPlay={onPlay} />
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
 
       <div className="section-divider" />
 
       {/* ===== RISING PRODUCERS ===== */}
-      <ScrollReveal>
-        <section className="max-w-7xl mx-auto px-6 py-16">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">👥</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange">PRODUCTEURS</span>
-          </div>
-          <h2 className="text-3xl font-extrabold uppercase tracking-tight mb-8">Rising Producers</h2>
+      <section className="max-w-6xl mx-auto px-6 py-24">
+        <ScrollReveal>
+          <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">producteurs</span>
+          <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Rising Producers</h2>
+        </ScrollReveal>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {producers.slice(0, 5).map((p, i) => (
-              <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
-                <ProducerCard producer={p} />
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      </ScrollReveal>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {producers.slice(0, 5).map((p, i) => (
+            <ScrollReveal key={p.id} delay={i * 0.08}>
+              <ProducerCard producer={p} />
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
 
       <div className="section-divider" />
 
-      {/* ===== CTA SELL ===== */}
-      <ScrollReveal>
-        <section className="max-w-4xl mx-auto px-6 py-16">
-          <div className="relative glass rounded-3xl p-10 text-center noise-overlay overflow-hidden animate-border-glow">
-            <div className="absolute inset-0 bg-gradient-radial from-puchk-orange/5 to-transparent pointer-events-none" />
-            <h2 className="text-4xl font-extrabold uppercase tracking-tight mb-3 relative z-10">
-              Garde <span className="text-puchk-orange animate-pulse-glow">85%</span> de tes ventes.
-            </h2>
-            <p className="text-secondary-puchk max-w-lg mx-auto mb-8 relative z-10">
-              Upload tes drum kits, définis tes licences, et touche le maximum de chaque vente.
-            </p>
-            <div className="flex justify-center gap-8 mb-8 relative z-10">
-              {[
-                { value: "15%", label: "commission" },
-                { value: "85%", label: "tu gardes" },
-                { value: "Mensuel", label: "paiement" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className={`text-2xl font-black ${s.value === "85%" ? "text-puchk-orange animate-pulse-glow" : ""}`}>{s.value}</div>
-                  <div className="text-[10px] text-secondary-puchk uppercase tracking-widest">{s.label}</div>
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="py-24 overflow-hidden">
+        <ScrollReveal>
+          <div className="max-w-6xl mx-auto px-6 mb-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">témoignages</span>
+            <h2 className="text-4xl font-black tracking-tight mt-1">Ce qu'ils disent</h2>
+          </div>
+        </ScrollReveal>
+
+        {/* Marquee */}
+        <div className="relative">
+          <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
+            {[...testimonials, ...testimonials].map((t, i) => (
+              <div key={i} className="w-[340px] flex-shrink-0 bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6">
+                <div className="text-2xl mb-3">{t.emoji}</div>
+                <p className="text-sm text-white/80 leading-relaxed italic mb-4">"{t.text}"</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-puchk-orange/15 flex items-center justify-center text-[10px] font-bold text-puchk-orange">
+                    {t.user.charAt(1).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold">{t.user}</div>
+                    <div className="text-[10px] text-secondary-puchk">{t.role}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-3 relative z-10">
-              <Link to="/dashboard" className="px-6 py-3 bg-puchk-orange text-white font-bold text-sm rounded-xl hover:bg-puchk-orange-hover spring-transition btn-press">
-                Commencer à vendre →
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="section-divider" />
+
+      {/* ===== CTA FINAL ===== */}
+      <section className="py-32 relative">
+        {/* Halo central */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] pointer-events-none" />
+
+        <ScrollReveal>
+          <div className="max-w-2xl mx-auto px-6 text-center relative z-10">
+            <h2 className="text-5xl sm:text-6xl font-black tracking-tight mb-4">
+              Crée. Vends. <span className="text-puchk-orange">Inspire.</span>
+            </h2>
+            <p className="text-lg text-secondary-puchk mb-10 leading-relaxed">
+              Commence gratuitement. Rejoins la communauté PUCHK.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Link to="/marketplace" className="px-7 py-3.5 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
+                Explorer les kits
               </Link>
-              <Link to="/producers" className="px-6 py-3 glass font-bold text-sm rounded-xl hover:text-puchk-orange spring-transition btn-press">
-                Voir les top vendeurs
-              </Link>
+              <a href="#" className="px-7 py-3.5 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+                Essayer Puchk Tool →
+              </a>
             </div>
           </div>
-        </section>
-      </ScrollReveal>
+        </ScrollReveal>
+      </section>
     </div>
   );
 };
