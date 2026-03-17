@@ -522,7 +522,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       {/* ===== HERO CAROUSEL — Fixed height ===== */}
       <section
         ref={heroRef}
-        className="relative h-[70vh] lg:h-[85vh] flex items-center overflow-hidden"
+        className="relative h-[50vh] lg:h-[55vh] flex items-center overflow-hidden"
         onMouseEnter={() => setHoveringHero(true)}
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
