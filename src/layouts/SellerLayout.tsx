@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { BarChart3, Package, Upload, DollarSign, TrendingUp, Tag, User, LayoutDashboard } from "lucide-react";
+import { BarChart3, Package, Upload, DollarSign, TrendingUp, Tag, User, LayoutDashboard, Megaphone, Image } from "lucide-react";
 
 const links = [
   { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard" },
@@ -8,6 +8,8 @@ const links = [
   { icon: DollarSign, label: "Ventes", path: "/dashboard/sales" },
   { icon: BarChart3, label: "Analytics", path: "/dashboard/analytics" },
   { icon: Tag, label: "Codes Promo", path: "/dashboard/promos" },
+  { icon: Megaphone, label: "Mise en avant", path: "/dashboard/promote" },
+  { icon: Image, label: "E-Cards", path: "/dashboard/ecards" },
   { icon: User, label: "Paramètres", path: "/dashboard/profile" },
 ];
 
