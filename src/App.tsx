@@ -36,6 +36,8 @@ import SellerSalesPage from "@/pages/seller/SellerSalesPage";
 import AnalyticsPage from "@/pages/seller/AnalyticsPage";
 import PromosPage from "@/pages/seller/PromosPage";
 import SellerProfilePage from "@/pages/seller/SellerProfilePage";
+import PromotePage from "@/pages/seller/PromotePage";
+import ECardPage from "@/pages/seller/ECardPage";
 
 // Admin pages
 import AdminLayout from "@/layouts/AdminLayout";
