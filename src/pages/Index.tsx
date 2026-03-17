@@ -725,10 +725,16 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Rising Producers</h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          onMouseEnter={() => producerGlow.pause()}
+          onMouseLeave={() => producerGlow.resume()}
+        >
           {producers.slice(0, 5).map((p, i) => (
             <ScrollReveal key={p.id} delay={i * 0.08}>
-              <ProducerCard producer={p} />
+              <GlowCard isGlowing={producerGlow.glowIndex === i}>
+                <ProducerCard producer={p} />
+              </GlowCard>
             </ScrollReveal>
           ))}
         </div>
