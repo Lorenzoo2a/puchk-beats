@@ -36,10 +36,10 @@ const ProductCard = ({ kit, onPlay, index = 0 }: ProductCardProps) => {
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -8 }}
-      className="group relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] hover:shadow-[0_8px_40px_rgba(255,107,26,0.12)] transition-all duration-300"
+      className="group relative z-[1] hover:z-50 bg-[var(--bg-surface)] rounded-2xl border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] hover:shadow-[0_8px_40px_rgba(255,107,26,0.12)] transition-all duration-300"
     >
-      {/* Cover */}
-      <Link to={`/kit/${kit.id}`} className="block relative overflow-hidden">
+      {/* Cover — no overflow hidden so card can visually escape */}
+      <Link to={`/kit/${kit.id}`} className="block relative rounded-t-2xl overflow-hidden">
         <div className="transition-transform duration-500 ease-out group-hover:scale-[1.04]">
           <KitCover genre={kit.genre} title={kit.name} producer={kit.producer} />
         </div>
