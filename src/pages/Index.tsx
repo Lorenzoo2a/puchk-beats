@@ -327,14 +327,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
   // Hot kits carousel state
   const [hotPage, setHotPage] = useState(0);
-  const [hotHovering, setHotHovering] = useState(false);
   const hotCardsPerPage = 4;
   const hotTotalPages = Math.ceil(hotKits.length / hotCardsPerPage);
 
-  const glowIndex = useSequentialGlow(
-    Math.min(hotCardsPerPage, hotKits.length - hotPage * hotCardsPerPage),
-    hotHovering
-  );
+  const hotGlow = useSequentialGlow(Math.min(hotCardsPerPage, hotKits.length - hotPage * hotCardsPerPage));
+  const staffGlow = useSequentialGlow(4);
+  const producerGlow = useSequentialGlow(5);
 
   useEffect(() => {
     if (hoveringHero) return;
