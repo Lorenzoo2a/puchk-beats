@@ -18,7 +18,7 @@ const SellerLayout = () => {
 
   return (
     <div className="min-h-screen pt-16 flex">
-      <aside className="hidden lg:flex w-60 flex-shrink-0 bg-puchk-deep border-r border-[rgba(255,107,26,0.08)] flex-col fixed top-16 bottom-0 left-0 z-40">
+      <aside className="hidden lg:flex w-60 flex-shrink-0 bg-[var(--bg-deep)] border-r border-[var(--glass-border)] flex-col fixed top-16 bottom-0 left-0 z-40 liquid-glass-strong !rounded-none">
         <div className="p-4 border-b border-[rgba(255,107,26,0.08)]">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-puchk-orange flex items-center justify-center shadow-[0_0_10px_rgba(255,107,26,0.3)]">
