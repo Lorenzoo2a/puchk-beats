@@ -5,23 +5,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useView, ViewMode } from "@/contexts/ViewContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const navByView: Record<ViewMode, { label: string; path: string }[]> = {
+const navByView: Record<ViewMode, { label: string; path: string; external?: boolean }[]> = {
   buyer: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Mon Compte", path: "/library" },
   ],
   seller: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Dashboard", path: "/dashboard" },
   ],
   admin: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Dashboard", path: "/dashboard" },
     { label: "Admin", path: "/admin" },
   ],
@@ -89,20 +92,32 @@ const Header = () => {
       </Link>
 
       <nav className="hidden md:flex items-center gap-6">
-        {navLinks.map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            className={`text-sm font-medium relative pb-1 spring-transition ${
-              isActive(link.path) ? "text-puchk-orange" : "text-white/60 hover:text-white"
-            }`}
-          >
-            {link.label}
-            {isActive(link.path) && (
-              <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-puchk-orange rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
-            )}
-          </Link>
-        ))}
+        {navLinks.map((link) => 
+          link.external ? (
+            <a
+              key={link.path}
+              href={link.path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-puchk-orange hover:text-puchk-orange-hover spring-transition flex items-center gap-1"
+            >
+              🛠 {link.label}
+            </a>
+          ) : (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`text-sm font-medium relative pb-1 spring-transition ${
+                isActive(link.path) ? "text-puchk-orange" : "text-white/60 hover:text-white"
+              }`}
+            >
+              {link.label}
+              {isActive(link.path) && (
+                <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-puchk-orange rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+              )}
+            </Link>
+          )
+        )}
       </nav>
 
       <div className="ml-auto flex items-center gap-3">
