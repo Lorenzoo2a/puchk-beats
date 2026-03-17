@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench, Mic, SlidersHorizontal } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
+import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
 import KitCover from "@/components/KitCover";
