@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
@@ -13,10 +13,11 @@ import ChartsPage from "./pages/ChartsPage";
 import ProducersPage from "./pages/ProducersPage";
 import ProducerProfilePage from "./pages/ProducerProfilePage";
 import NotFound from "./pages/NotFound";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Kit } from "@/data/mockData";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ViewProvider } from "@/contexts/ViewContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Buyer pages
 import BuyerLayout from "@/layouts/BuyerLayout";
@@ -59,65 +60,84 @@ import PrivacyPage from "@/pages/legal/PrivacyPage";
 
 const queryClient = new QueryClient();
 
+/* Scroll to top on page change */
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+};
+
 const AppContent = () => {
   const [playingKit, setPlayingKit] = useState<Kit | null>(null);
+  const location = useLocation();
 
   return (
     <>
+      <ScrollToTop />
       <Header />
-      <Routes>
-        <Route path="/" element={<HomePage onPlay={setPlayingKit} />} />
-        <Route path="/marketplace" element={<MarketplacePage onPlay={setPlayingKit} />} />
-        <Route path="/kit/:id" element={<ProductPage onPlay={setPlayingKit} />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/charts" element={<ChartsPage onPlay={setPlayingKit} />} />
-        <Route path="/producers" element={<ProducersPage />} />
-        <Route path="/producer/:username" element={<ProducerProfilePage onPlay={setPlayingKit} />} />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
+        >
+          <Routes location={location}>
+            <Route path="/" element={<HomePage onPlay={setPlayingKit} />} />
+            <Route path="/marketplace" element={<MarketplacePage onPlay={setPlayingKit} />} />
+            <Route path="/kit/:id" element={<ProductPage onPlay={setPlayingKit} />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/charts" element={<ChartsPage onPlay={setPlayingKit} />} />
+            <Route path="/producers" element={<ProducersPage />} />
+            <Route path="/producer/:username" element={<ProducerProfilePage onPlay={setPlayingKit} />} />
 
-        {/* Buyer */}
-        <Route path="/library" element={<BuyerLayout />}>
-          <Route index element={<LibraryPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="favorites" element={<FavoritesPage onPlay={setPlayingKit} />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
+            {/* Buyer */}
+            <Route path="/library" element={<BuyerLayout />}>
+              <Route index element={<LibraryPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="favorites" element={<FavoritesPage onPlay={setPlayingKit} />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-        {/* Seller */}
-        <Route path="/dashboard" element={<SellerLayout />}>
-          <Route index element={<DashboardOverview />} />
-          <Route path="kits" element={<SellerKitsPage />} />
-          <Route path="kits/new" element={<PublishKitPage />} />
-          <Route path="sales" element={<SellerSalesPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="promos" element={<PromosPage />} />
-          <Route path="profile" element={<SellerProfilePage />} />
-        </Route>
+            {/* Seller */}
+            <Route path="/dashboard" element={<SellerLayout />}>
+              <Route index element={<DashboardOverview />} />
+              <Route path="kits" element={<SellerKitsPage />} />
+              <Route path="kits/new" element={<PublishKitPage />} />
+              <Route path="sales" element={<SellerSalesPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="promos" element={<PromosPage />} />
+              <Route path="profile" element={<SellerProfilePage />} />
+            </Route>
 
-        {/* Admin */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminModeration />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users/:id" element={<AdminUserDetail />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="featured" element={<AdminFeatured />} />
-          <Route path="commissions" element={<AdminCommissions />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
+            {/* Admin */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<AdminModeration />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="users/:id" element={<AdminUserDetail />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="featured" element={<AdminFeatured />} />
+              <Route path="commissions" element={<AdminCommissions />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
 
-        {/* Auth */}
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
-        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+            {/* Auth */}
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* Legal */}
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/legal" element={<LegalPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+            {/* Legal */}
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/legal" element={<LegalPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
       <Footer />
       <AnimatePresence>
         {playingKit && <GlobalPlayer kit={playingKit} onClose={() => setPlayingKit(null)} />}
@@ -130,11 +150,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
-      <ViewProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </ViewProvider>
+      <ThemeProvider>
+        <ViewProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </ViewProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
