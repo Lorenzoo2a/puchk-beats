@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bell, ShoppingBag, ChevronDown, Sun, Moon } from "lucide-react";
+import { Search, Bell, ShoppingBag, ChevronDown, Sun, Moon, Wrench, User, DollarSign, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useView, ViewMode } from "@/contexts/ViewContext";
 import { useTheme } from "@/contexts/ThemeContext";
