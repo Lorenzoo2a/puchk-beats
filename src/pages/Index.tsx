@@ -69,26 +69,28 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
     // Init particles
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const count = 70;
+    const count = 100;
     particlesRef.current = Array.from({ length: count }, () => {
       const x = Math.random() * w;
       const y = Math.random() * h;
       return {
         x, y, baseX: x, baseY: y,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: 1.5 + Math.random() * 1,
-        opacity: 0.15 + Math.random() * 0.1,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: 1.2 + Math.random() * 1.3,
+        opacity: 0.12 + Math.random() * 0.15,
       };
     });
 
-    const CONNECTION_DIST = 150;
-    const MOUSE_RADIUS = 120;
+    const CONNECTION_DIST = 160;
+    const MOUSE_RADIUS = 200;
 
     const animate = () => {
       const cw = canvas.clientWidth;
       const ch = canvas.clientHeight;
-      ctx.clearRect(0, 0, cw, ch);
+      // Fade trail instead of full clear for a glow trail effect
+      ctx.fillStyle = "rgba(0,0,0,0.15)";
+      ctx.fillRect(0, 0, cw, ch);
 
       const mp = mousePosRef.current;
       const mx = mp ? mp.x * cw : -9999;
@@ -96,15 +98,16 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
 
       // Lerp halo toward mouse
       if (mp) {
-        haloRef.current.x += (mp.x - haloRef.current.x) * 0.05;
-        haloRef.current.y += (mp.y - haloRef.current.y) * 0.05;
+        haloRef.current.x += (mp.x - haloRef.current.x) * 0.08;
+        haloRef.current.y += (mp.y - haloRef.current.y) * 0.08;
       }
 
-      // Draw halo
+      // Draw halo that follows mouse
       const hx = haloRef.current.x * cw;
       const hy = haloRef.current.y * ch;
-      const haloGrad = ctx.createRadialGradient(hx, hy, 0, hx, hy, 200);
-      haloGrad.addColorStop(0, "rgba(255,107,26,0.05)");
+      const haloGrad = ctx.createRadialGradient(hx, hy, 0, hx, hy, 280);
+      haloGrad.addColorStop(0, mp ? "rgba(255,107,26,0.12)" : "rgba(255,107,26,0.04)");
+      haloGrad.addColorStop(0.5, mp ? "rgba(255,107,26,0.04)" : "rgba(255,107,26,0.01)");
       haloGrad.addColorStop(1, "transparent");
       ctx.fillStyle = haloGrad;
       ctx.fillRect(0, 0, cw, ch);
@@ -122,13 +125,13 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
         p.x = Math.max(0, Math.min(cw, p.x));
         p.y = Math.max(0, Math.min(ch, p.y));
 
-        // Mouse attraction
+        // Mouse attraction — stronger pull
         if (mp) {
           const dx = mx - p.x;
           const dy = my - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < MOUSE_RADIUS && dist > 0) {
-            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.8;
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 1.5;
             p.x += dx / dist * force;
             p.y += dy / dist * force;
           }
@@ -162,22 +165,21 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
               const ddy = p.y - q.y;
               const dist = Math.sqrt(ddx * ddx + ddy * ddy);
               if (dist < CONNECTION_DIST) {
-                const alpha = (1 - dist / CONNECTION_DIST) * 0.06;
-                // Brighter near mouse
+                const alpha = (1 - dist / CONNECTION_DIST) * 0.08;
                 let lineAlpha = alpha;
                 if (mp) {
                   const midX = (p.x + q.x) / 2;
                   const midY = (p.y + q.y) / 2;
                   const mouseDist = Math.sqrt((midX - mx) ** 2 + (midY - my) ** 2);
                   if (mouseDist < MOUSE_RADIUS) {
-                    lineAlpha = alpha + (1 - mouseDist / MOUSE_RADIUS) * 0.15;
+                    lineAlpha = alpha + (1 - mouseDist / MOUSE_RADIUS) * 0.25;
                   }
                 }
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
                 ctx.lineTo(q.x, q.y);
                 ctx.strokeStyle = `rgba(255,107,26,${lineAlpha})`;
-                ctx.lineWidth = 0.5;
+                ctx.lineWidth = 0.6;
                 ctx.stroke();
               }
             }
@@ -185,11 +187,26 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
         }
       }
 
-      // Draw particles
+      // Draw particles — bigger + glowing near mouse
       for (const p of particles) {
+        let drawSize = p.size;
+        let drawOpacity = p.opacity;
+        if (mp) {
+          const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+          if (dist < MOUSE_RADIUS) {
+            const proximity = 1 - dist / MOUSE_RADIUS;
+            drawSize = p.size + proximity * 3;
+            drawOpacity = Math.min(0.6, p.opacity + proximity * 0.35);
+            // Glow
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, drawSize * 3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,107,26,${proximity * 0.06})`;
+            ctx.fill();
+          }
+        }
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,107,26,${p.opacity})`;
+        ctx.arc(p.x, p.y, drawSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,107,26,${drawOpacity})`;
         ctx.fill();
       }
 
@@ -357,25 +374,24 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "tool":
         return (
           <motion.div className="relative z-[2] max-w-5xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-20 h-20 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Wrench className="w-10 h-10 text-puchk-orange" />
+            <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+              <Wrench className="w-7 h-7 text-puchk-orange" />
             </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               Crée ton drumkit de A à Z
             </motion.h2>
-            <motion.p className="text-sm sm:text-base text-secondary-puchk max-w-2xl mx-auto mb-8 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Puchk Tool est un studio de création de drumkits dans le navigateur. Enregistre tes propres sons avec ton micro, importe tes samples, organise-les en dossiers, mixe et ajuste chaque son dans le Mix Panel intégré, personnalise les icônes FL Studio, et exporte un kit ZIP prêt à vendre.
+            <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+              Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
             </motion.p>
-            {/* Feature mini cards */}
-            <motion.div className="flex flex-wrap justify-center gap-3 mb-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
               {[
-                { icon: "🎙️", label: "Enregistrement micro" },
+                { icon: "🎙️", label: "Enregistrement" },
                 { icon: "🎛️", label: "Mix Panel" },
-                { icon: "📁", label: "Organisation FL Studio" },
+                { icon: "📁", label: "FL Studio" },
               ].map(f => (
-                <div key={f.label} className="liquid-glass rounded-xl px-4 py-3 flex items-center gap-2">
-                  <span className="text-lg">{f.icon}</span>
-                  <span className="text-xs font-semibold">{f.label}</span>
+                <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
+                  <span className="text-sm">{f.icon}</span>
+                  <span className="text-[11px] font-semibold">{f.label}</span>
                 </div>
               ))}
             </motion.div>
@@ -522,7 +538,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       {/* ===== HERO CAROUSEL — Fixed height ===== */}
       <section
         ref={heroRef}
-        className="relative h-[70vh] lg:h-[85vh] flex items-center overflow-hidden"
+        className="relative h-[50vh] lg:h-[55vh] flex items-center overflow-hidden"
         onMouseEnter={() => setHoveringHero(true)}
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
