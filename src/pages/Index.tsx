@@ -373,12 +373,13 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronLeft className="w-4 h-4 text-white/60" />
           </button>
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-8 h-2.5" : "bg-white/20 w-2.5 h-2.5 hover:bg-white/40"}`}
+                className={`rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-10 h-[10px]" : "bg-white/20 w-[10px] h-[10px] hover:bg-white/40"}`}
+                style={i === currentSlide ? { boxShadow: "0 0 10px rgba(255,107,26,0.4)" } : {}}
               />
             ))}
           </div>
