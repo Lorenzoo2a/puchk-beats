@@ -5,6 +5,7 @@ import { kits, genreLabels, Kit } from "@/data/mockData";
 import KitCover from "@/components/KitCover";
 import ProductCard from "@/components/ProductCard";
 import { useState, useRef } from "react";
+import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 
 interface ProductPageProps {
   onPlay: (kit: Kit) => void;
@@ -21,6 +22,7 @@ const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React
 };
 
 const ProductPage = ({ onPlay }: ProductPageProps) => {
+  const similarGlow = useSequentialGlow(4);
   const { id } = useParams();
   const kit = kits.find((k) => k.id === id) || kits[0];
   const [selectedLicense, setSelectedLicense] = useState(0);
@@ -199,9 +201,23 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
                 </button>
               </div>
             </div>
-            <div ref={similarScrollRef} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+            <div
+              ref={similarScrollRef}
+              className="flex gap-4 overflow-x-auto pb-2"
+              style={{ scrollbarWidth: "none" }}
+              onMouseEnter={() => similarGlow.pause()}
+              onMouseLeave={() => similarGlow.resume()}
+            >
               {similarKits.slice(0, 4).map((k, i) => (
-                <div key={k.id} className="min-w-[220px] max-w-[260px] flex-shrink-0">
+                <div
+                  key={k.id}
+                  className="min-w-[220px] max-w-[260px] flex-shrink-0"
+                  style={{
+                    boxShadow: similarGlow.glowIndex === i ? "0 0 25px rgba(255,107,26,0.12), 0 0 8px rgba(255,107,26,0.06)" : "none",
+                    borderRadius: "1rem",
+                    transition: "box-shadow 600ms ease",
+                  }}
+                >
                   <ProductCard kit={k} onPlay={onPlay} index={i} />
                 </div>
               ))}

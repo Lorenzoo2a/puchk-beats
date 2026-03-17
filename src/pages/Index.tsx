@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench, Mic, SlidersHorizontal } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
+import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
 import KitCover from "@/components/KitCover";
@@ -299,33 +300,19 @@ const heroSlides = [
   { id: "promo", type: "promo" as const },
 ];
 
-/* ── Sequential Glow Hook ── */
-const useSequentialGlow = (count: number, isHovering: boolean) => {
-  const [glowIndex, setGlowIndex] = useState(0);
-  const [active, setActive] = useState(true);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (isHovering) {
-      setActive(false);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      return;
-    }
-    // Resume after 2s of no hover
-    timeoutRef.current = setTimeout(() => setActive(true), 2000);
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [isHovering]);
-
-  useEffect(() => {
-    if (!active || count === 0) return;
-    const interval = setInterval(() => {
-      setGlowIndex(prev => (prev + 1) % count);
-    }, 2300); // 1.5s visible + 0.8s transition
-    return () => clearInterval(interval);
-  }, [active, count]);
-
-  return active ? glowIndex : -1;
-};
+/* ── Glow wrapper component ── */
+const GlowCard = ({ children, isGlowing, className = "" }: { children: React.ReactNode; isGlowing: boolean; className?: string }) => (
+  <div
+    className={`relative z-[1] hover:z-50 ${className}`}
+    style={{
+      boxShadow: isGlowing ? "0 0 25px rgba(255,107,26,0.12), 0 0 8px rgba(255,107,26,0.06)" : "none",
+      borderRadius: "1rem",
+      transition: "box-shadow 600ms ease",
+    }}
+  >
+    {children}
+  </div>
+);
 
 const HomePage = ({ onPlay }: HomePageProps) => {
   const weekKit = kits[0];
@@ -340,14 +327,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
   // Hot kits carousel state
   const [hotPage, setHotPage] = useState(0);
-  const [hotHovering, setHotHovering] = useState(false);
   const hotCardsPerPage = 4;
   const hotTotalPages = Math.ceil(hotKits.length / hotCardsPerPage);
 
-  const glowIndex = useSequentialGlow(
-    Math.min(hotCardsPerPage, hotKits.length - hotPage * hotCardsPerPage),
-    hotHovering
-  );
+  const hotGlow = useSequentialGlow(Math.min(hotCardsPerPage, hotKits.length - hotPage * hotCardsPerPage));
+  const staffGlow = useSequentialGlow(4);
+  const producerGlow = useSequentialGlow(5);
 
   useEffect(() => {
     if (hoveringHero) return;
@@ -624,22 +609,15 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
         <div
           className="overflow-visible"
-          onMouseEnter={() => setHotHovering(true)}
-          onMouseLeave={() => setHotHovering(false)}
+          onMouseEnter={() => hotGlow.pause()}
+          onMouseLeave={() => hotGlow.resume()}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {hotKits.slice(hotPage * hotCardsPerPage, (hotPage + 1) * hotCardsPerPage).map((kit, i) => (
               <ScrollReveal key={`${hotPage}-${kit.id}`} delay={i * 0.08}>
-                <div
-                  className="relative z-[1] hover:z-50 transition-all duration-800"
-                  style={{
-                    boxShadow: glowIndex === i ? "0 0 25px rgba(255,107,26,0.12)" : "none",
-                    borderRadius: "1rem",
-                    transition: "box-shadow 800ms ease",
-                  }}
-                >
+                <GlowCard isGlowing={hotGlow.glowIndex === i}>
                   <ProductCard kit={kit} onPlay={onPlay} index={i} />
-                </div>
+                </GlowCard>
               </ScrollReveal>
             ))}
           </div>
@@ -673,12 +651,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Staff Picks</h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Featured large card */}
-          <ScrollReveal>
-            <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group h-full min-h-[400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" style={{ minHeight: 480 }}>
+          {/* Featured large card — info ONLY in overlay */}
+          <ScrollReveal className="h-full">
+            <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group h-full min-h-[480px]">
               <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.02]">
-                <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="1/1" />
+                <KitCover genre={staffPicks[0].genre} title="" producer="" aspectRatio="1/1" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute top-4 left-4 z-[5] px-2.5 py-1 rounded-full bg-yellow-500/15 backdrop-blur-xl border border-yellow-500/15">
@@ -703,11 +681,17 @@ const HomePage = ({ onPlay }: HomePageProps) => {
             </Link>
           </ScrollReveal>
 
-          {/* 2x2 grid of smaller picks */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 2x2 grid of smaller picks with sequential glow */}
+          <div
+            className="grid grid-cols-2 gap-4"
+            onMouseEnter={() => staffGlow.pause()}
+            onMouseLeave={() => staffGlow.resume()}
+          >
             {staffPicks.slice(1, 5).map((kit, i) => (
               <ScrollReveal key={kit.id} delay={0.08 + i * 0.08}>
-                <ProductCard kit={kit} onPlay={onPlay} index={i} />
+                <GlowCard isGlowing={staffGlow.glowIndex === i}>
+                  <ProductCard kit={kit} onPlay={onPlay} index={i} />
+                </GlowCard>
               </ScrollReveal>
             ))}
           </div>
@@ -741,10 +725,16 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Rising Producers</h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          onMouseEnter={() => producerGlow.pause()}
+          onMouseLeave={() => producerGlow.resume()}
+        >
           {producers.slice(0, 5).map((p, i) => (
             <ScrollReveal key={p.id} delay={i * 0.08}>
-              <ProducerCard producer={p} />
+              <GlowCard isGlowing={producerGlow.glowIndex === i}>
+                <ProducerCard producer={p} />
+              </GlowCard>
             </ScrollReveal>
           ))}
         </div>

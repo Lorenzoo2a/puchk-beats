@@ -78,72 +78,74 @@ const AppContent = () => {
     <>
       <ScrollToTop />
       <Header />
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <Routes location={location}>
-            <Route path="/" element={<HomePage onPlay={setPlayingKit} />} />
-            <Route path="/marketplace" element={<MarketplacePage onPlay={setPlayingKit} />} />
-            <Route path="/kit/:id" element={<ProductPage onPlay={setPlayingKit} />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/charts" element={<ChartsPage onPlay={setPlayingKit} />} />
-            <Route path="/producers" element={<ProducersPage />} />
-            <Route path="/producer/:username" element={<ProducerProfilePage onPlay={setPlayingKit} />} />
+      <div style={{ paddingBottom: playingKit ? 80 : 0 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Routes location={location}>
+              <Route path="/" element={<HomePage onPlay={setPlayingKit} />} />
+              <Route path="/marketplace" element={<MarketplacePage onPlay={setPlayingKit} />} />
+              <Route path="/kit/:id" element={<ProductPage onPlay={setPlayingKit} />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/charts" element={<ChartsPage onPlay={setPlayingKit} />} />
+              <Route path="/producers" element={<ProducersPage />} />
+              <Route path="/producer/:username" element={<ProducerProfilePage onPlay={setPlayingKit} />} />
 
-            {/* Buyer */}
-            <Route path="/library" element={<BuyerLayout />}>
-              <Route index element={<LibraryPage />} />
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="favorites" element={<FavoritesPage onPlay={setPlayingKit} />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              {/* Buyer */}
+              <Route path="/library" element={<BuyerLayout />}>
+                <Route index element={<LibraryPage />} />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="favorites" element={<FavoritesPage onPlay={setPlayingKit} />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            {/* Seller */}
-            <Route path="/dashboard" element={<SellerLayout />}>
-              <Route index element={<DashboardOverview />} />
-              <Route path="kits" element={<SellerKitsPage />} />
-              <Route path="kits/new" element={<PublishKitPage />} />
-              <Route path="sales" element={<SellerSalesPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="promos" element={<PromosPage />} />
-              <Route path="promote" element={<PromotePage />} />
-              <Route path="ecards" element={<ECardPage />} />
-              <Route path="profile" element={<SellerProfilePage />} />
-            </Route>
+              {/* Seller */}
+              <Route path="/dashboard" element={<SellerLayout />}>
+                <Route index element={<DashboardOverview />} />
+                <Route path="kits" element={<SellerKitsPage />} />
+                <Route path="kits/new" element={<PublishKitPage />} />
+                <Route path="sales" element={<SellerSalesPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="promos" element={<PromosPage />} />
+                <Route path="promote" element={<PromotePage />} />
+                <Route path="ecards" element={<ECardPage />} />
+                <Route path="profile" element={<SellerProfilePage />} />
+              </Route>
 
-            {/* Admin */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminModeration />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="users/:id" element={<AdminUserDetail />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="featured" element={<AdminFeatured />} />
-              <Route path="commissions" element={<AdminCommissions />} />
-              <Route path="reports" element={<AdminReports />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+              {/* Admin */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminModeration />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="users/:id" element={<AdminUserDetail />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="featured" element={<AdminFeatured />} />
+                <Route path="commissions" element={<AdminCommissions />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
 
-            {/* Auth */}
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/register" element={<RegisterPage />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+              {/* Auth */}
+              <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/register" element={<RegisterPage />} />
+              <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
 
-            {/* Legal */}
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/legal" element={<LegalPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
+              {/* Legal */}
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/legal" element={<LegalPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
-      <Footer />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+        <Footer />
+      </div>
       <ScrollToTopButton />
       <AnimatePresence>
         {playingKit && <GlobalPlayer kit={playingKit} onClose={() => setPlayingKit(null)} />}
