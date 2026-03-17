@@ -5,23 +5,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useView, ViewMode } from "@/contexts/ViewContext";
 import { useTheme } from "@/contexts/ThemeContext";
 
-const navByView: Record<ViewMode, { label: string; path: string }[]> = {
+const navByView: Record<ViewMode, { label: string; path: string; external?: boolean }[]> = {
   buyer: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Mon Compte", path: "/library" },
   ],
   seller: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Dashboard", path: "/dashboard" },
   ],
   admin: [
     { label: "Marketplace", path: "/marketplace" },
     { label: "Producteurs", path: "/producers" },
     { label: "Charts", path: "/charts" },
+    { label: "Puchk Tool", path: "https://tool.puchk.com", external: true },
     { label: "Dashboard", path: "/dashboard" },
     { label: "Admin", path: "/admin" },
   ],
