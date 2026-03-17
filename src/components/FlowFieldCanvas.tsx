@@ -1,8 +1,7 @@
 import { useRef, useEffect } from "react";
 
 /**
- * Simplex-like noise (2D/3D) — lightweight implementation.
- * Based on improved Perlin noise with gradient table.
+ * Simplex-like 3D noise — lightweight implementation.
  */
 const createNoise = () => {
   const perm = new Uint8Array(512);
@@ -11,7 +10,6 @@ const createNoise = () => {
     [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
     [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1],
   ];
-  // Seed permutation
   const p = new Uint8Array(256);
   for (let i = 0; i < 256; i++) p[i] = i;
   for (let i = 255; i > 0; i--) {
@@ -28,23 +26,15 @@ const createNoise = () => {
     const X = Math.floor(x) & 255;
     const Y = Math.floor(y) & 255;
     const Z = Math.floor(z) & 255;
-    x -= Math.floor(x);
-    y -= Math.floor(y);
-    z -= Math.floor(z);
+    x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
     const u = fade(x), v = fade(y), w = fade(z);
-    const A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A+1] + Z;
-    const B = perm[X+1] + Y, BA = perm[B] + Z, BB = perm[B+1] + Z;
+    const A = perm[X]+Y, AA = perm[A]+Z, AB = perm[A+1]+Z;
+    const B = perm[X+1]+Y, BA = perm[B]+Z, BB = perm[B+1]+Z;
     return lerp(
-      lerp(
-        lerp(dot3(grad3[perm[AA]%12], x, y, z), dot3(grad3[perm[BA]%12], x-1, y, z), u),
-        lerp(dot3(grad3[perm[AB]%12], x, y-1, z), dot3(grad3[perm[BB]%12], x-1, y-1, z), u),
-        v
-      ),
-      lerp(
-        lerp(dot3(grad3[perm[AA+1]%12], x, y, z-1), dot3(grad3[perm[BA+1]%12], x-1, y, z-1), u),
-        lerp(dot3(grad3[perm[AB+1]%12], x, y-1, z-1), dot3(grad3[perm[BB+1]%12], x-1, y-1, z-1), u),
-        v
-      ),
+      lerp(lerp(dot3(grad3[perm[AA]%12],x,y,z), dot3(grad3[perm[BA]%12],x-1,y,z), u),
+           lerp(dot3(grad3[perm[AB]%12],x,y-1,z), dot3(grad3[perm[BB]%12],x-1,y-1,z), u), v),
+      lerp(lerp(dot3(grad3[perm[AA+1]%12],x,y,z-1), dot3(grad3[perm[BA+1]%12],x-1,y,z-1), u),
+           lerp(dot3(grad3[perm[AB+1]%12],x,y-1,z-1), dot3(grad3[perm[BB+1]%12],x-1,y-1,z-1), u), v),
       w
     );
   };
@@ -57,9 +47,6 @@ interface FlowFieldCanvasProps {
 const FlowFieldCanvas = ({ mousePos }: FlowFieldCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mousePosRef = useRef(mousePos);
-  const mouseStrengthRef = useRef(0); // decays when mouse leaves
-  const prevMouseRef = useRef<{ x: number; y: number } | null>(null);
-  const mouseSpeedRef = useRef(0);
   const animFrameRef = useRef(0);
 
   mousePosRef.current = mousePos;
@@ -72,13 +59,20 @@ const FlowFieldCanvas = ({ mousePos }: FlowFieldCanvasProps) => {
 
     const noise = createNoise();
     const isMobile = window.innerWidth < 768;
-    const PARTICLE_COUNT = isMobile ? 100 : 250;
-    const NOISE_SCALE = 0.003;
-    const NOISE_SPEED = 0.0008;
-    const MOUSE_RADIUS = 150;
+    const SPACING = isMobile ? 40 : 25;
+    const LINE_LEN = isMobile ? 8 : 10;
+    const NOISE_SCALE = 0.008;
+    const BASE_MOUSE_RADIUS = 200;
+    const dpr = Math.min(window.devicePixelRatio, 2);
 
     let cw = 0, ch = 0;
-    const dpr = Math.min(window.devicePixelRatio, 2);
+
+    // Smooth mouse state
+    const mouse = { x: -9999, y: -9999, active: false, speed: 0 };
+    const halo = { x: 0, y: 0 };
+    let prevMx = -9999, prevMy = -9999;
+    // Store current angles for smooth lerp
+    let currentAngles: Float32Array | null = null;
 
     const resize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
@@ -90,125 +84,126 @@ const FlowFieldCanvas = ({ mousePos }: FlowFieldCanvasProps) => {
       canvas.style.width = `${cw}px`;
       canvas.style.height = `${ch}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      halo.x = cw * 0.5;
+      halo.y = ch * 0.5;
+      // Reset angle cache on resize
+      const cols = Math.ceil(cw / SPACING) + 1;
+      const rows = Math.ceil(ch / SPACING) + 1;
+      currentAngles = new Float32Array(cols * rows);
     };
     resize();
     window.addEventListener("resize", resize);
-
-    // Init particles
-    const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
-      x: Math.random() * (cw || 800),
-      y: Math.random() * (ch || 600),
-      speed: 0.5 + Math.random() * 1,
-      opacity: 0.15 + Math.random() * 0.15,
-    }));
-
-    // Autonomous halo movement
-    const halo = { x: cw * 0.5, y: ch * 0.5, targetX: cw * 0.5, targetY: ch * 0.5 };
 
     let zOff = 0;
     let frame = 0;
 
     const animate = () => {
       frame++;
-      zOff += NOISE_SPEED;
+      zOff += 0.003;
       const w = cw || 1;
       const h = ch || 1;
 
-      // Fade trail — dark overlay each frame
-      ctx.fillStyle = "rgba(13,10,4,0.04)";
-      ctx.fillRect(0, 0, w, h);
+      // Full clear — no trails
+      ctx.clearRect(0, 0, w, h);
 
-      // Mouse handling
+      // Update mouse
       const mp = mousePosRef.current;
       if (mp) {
-        mouseStrengthRef.current = Math.min(1, mouseStrengthRef.current + 0.05);
-        const px = mp.x * w;
-        const py = mp.y * h;
-        if (prevMouseRef.current) {
-          const dx = px - prevMouseRef.current.x;
-          const dy = py - prevMouseRef.current.y;
-          mouseSpeedRef.current = Math.min(30, Math.sqrt(dx * dx + dy * dy));
-        }
-        prevMouseRef.current = { x: px, y: py };
-      } else {
-        mouseStrengthRef.current = Math.max(0, mouseStrengthRef.current - 0.008);
-        mouseSpeedRef.current *= 0.95;
-      }
-
-      // Halo position: follow mouse or autonomous sinusoidal path
-      if (mp && mouseStrengthRef.current > 0.3) {
         const tx = mp.x * w;
         const ty = mp.y * h;
-        halo.x += (tx - halo.x) * 0.08;
-        halo.y += (ty - halo.y) * 0.08;
+        // Smooth mouse position
+        mouse.x += (tx - mouse.x) * 0.15;
+        mouse.y += (ty - mouse.y) * 0.15;
+        mouse.active = true;
+        const dx = tx - prevMx;
+        const dy = ty - prevMy;
+        const spd = Math.sqrt(dx * dx + dy * dy);
+        mouse.speed += (spd - mouse.speed) * 0.2;
+        prevMx = tx;
+        prevMy = ty;
       } else {
-        // Autonomous flowing movement — Lissajous-like
-        const t = frame * 0.0008;
-        const ax = w * 0.5 + Math.sin(t * 1.1) * w * 0.3 + Math.sin(t * 0.7 + 2) * w * 0.1;
-        const ay = h * 0.5 + Math.cos(t * 0.9) * h * 0.25 + Math.cos(t * 1.3 + 1) * h * 0.1;
-        halo.x += (ax - halo.x) * 0.015;
-        halo.y += (ay - halo.y) * 0.015;
+        mouse.active = false;
+        mouse.speed *= 0.92;
       }
 
-      // Draw halo — softer intensity
+      // Halo position
+      if (mouse.active) {
+        halo.x += (mouse.x - halo.x) * 0.06;
+        halo.y += (mouse.y - halo.y) * 0.06;
+      } else {
+        const t = frame * 0.0006;
+        const ax = w * 0.5 + Math.sin(t * 1.1) * w * 0.3;
+        const ay = h * 0.5 + Math.cos(t * 0.9) * h * 0.25;
+        halo.x += (ax - halo.x) * 0.01;
+        halo.y += (ay - halo.y) * 0.01;
+      }
+
+      // Draw subtle halo
       const haloGrad = ctx.createRadialGradient(halo.x, halo.y, 0, halo.x, halo.y, 250);
-      const haloAlpha = mp ? 0.05 : 0.03;
-      haloGrad.addColorStop(0, `rgba(255,107,26,${haloAlpha})`);
-      haloGrad.addColorStop(0.5, `rgba(255,107,26,${haloAlpha * 0.4})`);
+      haloGrad.addColorStop(0, `rgba(255,107,26,${mouse.active ? 0.05 : 0.03})`);
+      haloGrad.addColorStop(0.6, `rgba(255,107,26,${mouse.active ? 0.015 : 0.008})`);
       haloGrad.addColorStop(1, "transparent");
       ctx.fillStyle = haloGrad;
       ctx.fillRect(0, 0, w, h);
 
-      // Mouse perturbation position
-      const mx = mp ? mp.x * w : (prevMouseRef.current?.x ?? -9999);
-      const my = mp ? mp.y * h : (prevMouseRef.current?.y ?? -9999);
-      const mStr = mouseStrengthRef.current;
-      const mSpeed = mouseSpeedRef.current;
+      // Draw flow field arrows
+      const cols = Math.ceil(w / SPACING) + 1;
+      const mouseRadius = BASE_MOUSE_RADIUS + Math.min(mouse.speed * 3, 100);
+      const mouseRadiusSq = mouseRadius * mouseRadius;
 
-      // Update & draw particles following the flow field
-      for (const p of particles) {
-        // Sample noise field to get flow direction
-        const angle = noise(p.x * NOISE_SCALE, p.y * NOISE_SCALE, zOff) * Math.PI * 4;
-        let vx = Math.cos(angle) * p.speed;
-        let vy = Math.sin(angle) * p.speed;
+      let idx = 0;
+      for (let gy = 0; gy < h; gy += SPACING) {
+        for (let gx = 0; gx < w; gx += SPACING) {
+          // Target angle from noise
+          let targetAngle = noise(gx * NOISE_SCALE, gy * NOISE_SCALE, zOff) * Math.PI * 2;
 
-        // Mouse perturbation — push radially away from cursor
-        if (mStr > 0) {
-          const dx = p.x - mx;
-          const dy = p.y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MOUSE_RADIUS && dist > 0) {
-            const force = (1 - dist / MOUSE_RADIUS) * mStr * (2 + mSpeed * 0.3);
-            vx += (dx / dist) * force;
-            vy += (dy / dist) * force;
+          let brightness = 0.12;
+          let scale = 1;
+
+          // Mouse perturbation
+          if (mouse.active) {
+            const dx = gx - mouse.x;
+            const dy = gy - mouse.y;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < mouseRadiusSq) {
+              const dist = Math.sqrt(distSq);
+              const influence = 1 - dist / mouseRadius;
+              const influenceSq = influence * influence; // quadratic falloff
+              // Point away from cursor
+              const repelAngle = Math.atan2(dy, dx);
+              targetAngle = targetAngle + (repelAngle - targetAngle) * influenceSq;
+              brightness = 0.12 + influenceSq * 0.25;
+              scale = 1 + influenceSq * 0.4 + Math.min(mouse.speed * 0.01, 0.3) * influenceSq;
+            }
           }
-        }
 
-        p.x += vx;
-        p.y += vy;
-
-        // Wrap around edges
-        if (p.x < 0) p.x = w;
-        if (p.x > w) p.x = 0;
-        if (p.y < 0) p.y = h;
-        if (p.y > h) p.y = 0;
-
-        // Brightness near cursor
-        let drawOpacity = p.opacity;
-        if (mStr > 0) {
-          const dx = p.x - mx;
-          const dy = p.y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MOUSE_RADIUS) {
-            drawOpacity = Math.min(0.4, p.opacity + (1 - dist / MOUSE_RADIUS) * 0.2 * mStr);
+          // Smooth lerp current angle toward target
+          if (currentAngles) {
+            const prev = currentAngles[idx];
+            // Handle angle wrapping
+            let diff = targetAngle - prev;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            currentAngles[idx] = prev + diff * 0.12;
+            targetAngle = currentAngles[idx];
           }
-        }
+          idx++;
 
-        // Draw particle
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 1 + Math.random() * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,107,26,${drawOpacity})`;
-        ctx.fill();
+          const len = LINE_LEN * scale;
+          const cos = Math.cos(targetAngle);
+          const sin = Math.sin(targetAngle);
+          const x1 = gx - cos * len * 0.5;
+          const y1 = gy - sin * len * 0.5;
+          const x2 = gx + cos * len * 0.5;
+          const y2 = gy + sin * len * 0.5;
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = `rgba(255,107,26,${brightness})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
       }
 
       animFrameRef.current = requestAnimationFrame(animate);
