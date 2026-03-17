@@ -22,6 +22,7 @@ const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React
 };
 
 const ProductPage = ({ onPlay }: ProductPageProps) => {
+  const similarGlow = useSequentialGlow(4);
   const { id } = useParams();
   const kit = kits.find((k) => k.id === id) || kits[0];
   const [selectedLicense, setSelectedLicense] = useState(0);
