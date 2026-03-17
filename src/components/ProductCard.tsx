@@ -1,46 +1,56 @@
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { Play, Heart, ShoppingBag, Star } from "lucide-react";
 import { Kit, genreLabels } from "@/data/mockData";
 import KitCover from "./KitCover";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface ProductCardProps {
   kit: Kit;
   onPlay?: (kit: Kit) => void;
+  index?: number;
 }
 
-const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
+const ProductCard = ({ kit, onPlay, index = 0 }: ProductCardProps) => {
   const [liked, setLiked] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
     <motion.div
-      whileHover={{ y: -6, boxShadow: "0 4px 6px rgba(0,0,0,0.3), 0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(255,107,26,0.2)" }}
-      transition={{ type: "spring", stiffness: 300, damping: 15 }}
-      className="group relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] spring-transition puchk-shadow"
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -8 }}
+      className="group relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] hover:shadow-[0_8px_40px_rgba(255,107,26,0.1)] transition-all duration-300"
     >
       {/* Cover */}
-      <Link to={`/kit/${kit.id}`} className="block relative">
-        <KitCover genre={kit.genre} title={kit.name} producer={kit.producer} />
+      <Link to={`/kit/${kit.id}`} className="block relative overflow-hidden">
+        <div className="transition-transform duration-500 ease-out group-hover:scale-[1.04]">
+          <KitCover genre={kit.genre} title={kit.name} producer={kit.producer} />
+        </div>
 
         {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[5]">
+        <div className="absolute inset-0 flex items-center justify-center z-[5]">
           <motion.button
+            initial={{ opacity: 0, scale: 0 }}
+            whileInView={{ opacity: 0 }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={(e) => { e.preventDefault(); onPlay?.(kit); }}
-            className="w-14 h-14 rounded-full bg-puchk-orange flex items-center justify-center shadow-[0_0_20px_rgba(255,107,26,0.5)] btn-press"
+            className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-100 scale-75 btn-press"
           >
-            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
           </motion.button>
         </div>
 
         {/* Favorite */}
         <button
           onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
-          className="absolute top-3 right-3 z-[5] p-1.5 rounded-full bg-black/30 backdrop-blur-sm spring-transition hover:bg-black/50 btn-press"
+          className="absolute top-3 right-3 z-[5] p-1.5 rounded-full bg-black/20 backdrop-blur-sm transition-all duration-200 hover:bg-black/40 btn-press"
         >
-          <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : "text-white/70"}`} />
+          <Heart className={`w-4 h-4 transition-all duration-300 ${liked ? "fill-puchk-orange text-puchk-orange scale-110" : "text-white/60"}`} />
         </button>
       </Link>
 
@@ -53,8 +63,8 @@ const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
             <span className="text-[10px] text-secondary-puchk">{kit.rating} ({kit.reviews})</span>
           </div>
         </div>
-        <button className="p-3 rounded-xl bg-white/5 hover:bg-puchk-orange spring-transition group/btn btn-press">
-          <ShoppingBag className="w-5 h-5 group-hover/btn:text-white text-white/70 spring-transition" />
+        <button className="p-2.5 rounded-xl bg-white/5 hover:bg-puchk-orange transition-all duration-200 group/btn btn-press">
+          <ShoppingBag className="w-4 h-4 group-hover/btn:text-white text-white/50 transition-colors" />
         </button>
       </div>
     </motion.div>
