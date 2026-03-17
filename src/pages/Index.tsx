@@ -609,22 +609,15 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
         <div
           className="overflow-visible"
-          onMouseEnter={() => setHotHovering(true)}
-          onMouseLeave={() => setHotHovering(false)}
+          onMouseEnter={() => hotGlow.pause()}
+          onMouseLeave={() => hotGlow.resume()}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {hotKits.slice(hotPage * hotCardsPerPage, (hotPage + 1) * hotCardsPerPage).map((kit, i) => (
               <ScrollReveal key={`${hotPage}-${kit.id}`} delay={i * 0.08}>
-                <div
-                  className="relative z-[1] hover:z-50 transition-all duration-800"
-                  style={{
-                    boxShadow: glowIndex === i ? "0 0 25px rgba(255,107,26,0.12)" : "none",
-                    borderRadius: "1rem",
-                    transition: "box-shadow 800ms ease",
-                  }}
-                >
+                <GlowCard isGlowing={hotGlow.glowIndex === i}>
                   <ProductCard kit={kit} onPlay={onPlay} index={i} />
-                </div>
+                </GlowCard>
               </ScrollReveal>
             ))}
           </div>
