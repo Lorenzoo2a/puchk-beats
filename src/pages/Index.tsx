@@ -175,35 +175,37 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "tool":
         return (
           <motion.div className="relative z-[2] max-w-5xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Wrench className="w-7 h-7 text-puchk-orange" />
-            </motion.div>
-            <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              Crée ton drumkit de A à Z
-            </motion.h2>
-            <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
-            </motion.p>
-            <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              {[
-                { icon: "🎙️", label: "Enregistrement" },
-                { icon: "🎛️", label: "Mix Panel" },
-                { icon: "📁", label: "FL Studio" },
-              ].map(f => (
-                <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
-                  <span className="text-sm">{f.icon}</span>
-                  <span className="text-[11px] font-semibold">{f.label}</span>
-                </div>
-              ))}
-            </motion.div>
-            <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-puchk-orange text-white font-black text-base rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2 animate-pulse-glow">
-                Ouvrir Puchk Tool <ArrowRight className="w-5 h-5" />
-              </a>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-4 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
-                En savoir plus
-              </a>
-            </motion.div>
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6">
+              <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+                <Wrench className="w-7 h-7 text-puchk-orange" />
+              </motion.div>
+              <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" style={titleShadow} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                Crée ton drumkit de A à Z
+              </motion.h2>
+              <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" style={subtitleShadow} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
+              </motion.p>
+              <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                {[
+                  { icon: "🎙️", label: "Enregistrement" },
+                  { icon: "🎛️", label: "Mix Panel" },
+                  { icon: "📁", label: "FL Studio" },
+                ].map(f => (
+                  <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
+                    <span className="text-sm">{f.icon}</span>
+                    <span className="text-[11px] font-semibold">{f.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+              <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-puchk-orange text-white font-black text-base rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2 animate-pulse-glow">
+                  Ouvrir Puchk Tool <ArrowRight className="w-5 h-5" />
+                </a>
+                <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-4 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
+                  En savoir plus
+                </a>
+              </motion.div>
+            </div>
           </motion.div>
         );
 
