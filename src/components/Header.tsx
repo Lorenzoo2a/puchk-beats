@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bell, ShoppingBag, ChevronDown, Sun, Moon } from "lucide-react";
+import { Search, Bell, ShoppingBag, ChevronDown, Sun, Moon, Wrench, User, DollarSign, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useView, ViewMode } from "@/contexts/ViewContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -30,10 +30,10 @@ const navByView: Record<ViewMode, { label: string; path: string; external?: bool
   ],
 };
 
-const viewLabels: { key: ViewMode; emoji: string; label: string }[] = [
-  { key: "buyer", emoji: "👤", label: "Acheteur" },
-  { key: "seller", emoji: "💰", label: "Vendeur" },
-  { key: "admin", emoji: "⚙️", label: "Admin" },
+const viewLabels: { key: ViewMode; Icon: typeof User; label: string }[] = [
+  { key: "buyer", Icon: User, label: "Acheteur" },
+  { key: "seller", Icon: DollarSign, label: "Vendeur" },
+  { key: "admin", Icon: Settings, label: "Admin" },
 ];
 
 const Header = () => {
@@ -99,9 +99,9 @@ const Header = () => {
               href={link.path}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-puchk-orange hover:text-puchk-orange-hover spring-transition flex items-center gap-1"
+              className="text-sm font-medium text-puchk-orange hover:text-puchk-orange-hover spring-transition flex items-center gap-1.5"
             >
-              🛠 {link.label}
+              <Wrench className="w-3.5 h-3.5" /> {link.label}
             </a>
           ) : (
             <Link
@@ -148,7 +148,7 @@ const Header = () => {
                   : "text-white/40 hover:text-white/70"
               }`}
             >
-              {v.emoji} {v.label}
+              <v.Icon className="w-3 h-3" /> {v.label}
             </button>
           ))}
         </div>

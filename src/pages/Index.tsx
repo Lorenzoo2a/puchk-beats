@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Users, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Users, Wrench, Mic, SlidersHorizontal, FolderOpen, Package, Sparkles, Flame, Headphones, DollarSign, Zap, Quote } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 import ProductCard from "@/components/ProductCard";
@@ -100,12 +100,12 @@ const MiniPlayer = ({ kit, onPlay }: { kit: Kit; onPlay: (k: Kit) => void }) => 
 
 /* ── Testimonials data ── */
 const testimonials = [
-  { text: "PUCHK a changé ma façon de vendre mes kits.", user: "@KXZMA", role: "Vendeur", emoji: "🔥" },
-  { text: "Les kits sont de qualité studio. Rien à voir avec les autres marketplaces.", user: "@xMelo", role: "Acheteur", emoji: "🎧" },
-  { text: "J'ai fait mes premiers 1000€ en 2 semaines sur PUCHK.", user: "@OZKR", role: "Vendeur", emoji: "💰" },
-  { text: "L'interface est propre, le téléchargement est instantané.", user: "@BeatsByJay", role: "Acheteur", emoji: "⚡" },
-  { text: "Le Puchk Tool m'a fait gagner des heures sur l'organisation de mes kits.", user: "@mochiprod", role: "Vendeur", emoji: "🛠" },
-  { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", emoji: "✨" },
+  { text: "PUCHK a changé ma façon de vendre mes kits.", user: "@KXZMA", role: "Vendeur", icon: Flame },
+  { text: "Les kits sont de qualité studio. Rien à voir avec les autres marketplaces.", user: "@xMelo", role: "Acheteur", icon: Headphones },
+  { text: "J'ai fait mes premiers 1000€ en 2 semaines sur PUCHK.", user: "@OZKR", role: "Vendeur", icon: DollarSign },
+  { text: "L'interface est propre, le téléchargement est instantané.", user: "@BeatsByJay", role: "Acheteur", icon: Zap },
+  { text: "Le Puchk Tool m'a fait gagner des heures sur l'organisation de mes kits.", user: "@mochiprod", role: "Vendeur", icon: Wrench },
+  { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", icon: Sparkles },
 ];
 
 /* ── Hero slides config — Puchk Tool first ── */
@@ -188,20 +188,20 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               </motion.p>
               <motion.div className="flex flex-wrap justify-center gap-2 mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                 {[
-                  { icon: "🎙️", label: "Record" },
-                  { icon: "🎛️", label: "Mix" },
-                  { icon: "📁", label: "FL Studio ready" },
-                  { icon: "📦", label: "Export ZIP" },
+                  { Icon: Mic, label: "Record" },
+                  { Icon: SlidersHorizontal, label: "Mix" },
+                  { Icon: FolderOpen, label: "FL Studio ready" },
+                  { Icon: Package, label: "Export ZIP" },
                 ].map(f => (
                   <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
-                    <span className="text-sm">{f.icon}</span>
+                    <f.Icon className="w-3.5 h-3.5 text-puchk-orange" />
                     <span className="text-[11px] font-semibold">{f.label}</span>
                   </div>
                 ))}
               </motion.div>
               <motion.div className="flex justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                 <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-12 py-4 bg-puchk-orange text-white font-black text-lg rounded-xl btn-orange-glow btn-press inline-flex items-center gap-3 animate-pulse-glow shadow-[0_0_30px_rgba(255,107,26,0.3)]">
-                  Lancer Puchk Tool <ArrowRight className="w-5 h-5" />
+                  Tester Puchk Tool <ArrowRight className="w-5 h-5" />
                 </a>
               </motion.div>
             </div>
@@ -321,7 +321,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
             </motion.div>
             <motion.div className="flex-1 max-w-md bg-black/30 backdrop-blur-sm rounded-2xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1"><Sparkles className="w-3 h-3" /> NOUVEAU</div>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={titleShadow}>{promoKit.name}</h2>
               <p className="text-secondary-puchk mb-2" style={subtitleShadow}>par <span className="text-puchk-orange">{promoKit.producer}</span></p>
               <div className="flex items-center gap-2 mb-6">
@@ -569,7 +569,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
             {[...testimonials, ...testimonials].map((t, i) => (
               <div key={i} className="w-[340px] flex-shrink-0 liquid-glass rounded-2xl p-6">
-                <div className="text-2xl mb-3">{t.emoji}</div>
+                <t.icon className="w-5 h-5 text-puchk-orange mb-3" />
                 <p className="text-sm text-white/80 leading-relaxed italic mb-4">"{t.text}"</p>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-puchk-orange/15 flex items-center justify-center text-[10px] font-bold text-puchk-orange">
