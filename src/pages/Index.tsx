@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Users, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Users, Wrench, Mic, SlidersHorizontal, FolderOpen, Package, Sparkles, Flame, Headphones, DollarSign, Zap, Quote } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 import ProductCard from "@/components/ProductCard";
