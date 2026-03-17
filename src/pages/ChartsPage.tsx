@@ -19,10 +19,10 @@ const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React
 };
 
 const tabs: { key: TabKey; label: string }[] = [
-  { key: "hot", label: "🔥 Hot" },
-  { key: "sales", label: "📈 Meilleures ventes" },
-  { key: "rated", label: "⭐ Mieux notés" },
-  { key: "new", label: "🆕 Nouveautés" },
+  { key: "hot", label: "Hot" },
+  { key: "sales", label: "Meilleures ventes" },
+  { key: "rated", label: "Mieux notés" },
+  { key: "new", label: "Nouveautés" },
 ];
 
 const getSorted = (tab: TabKey): Kit[] => {

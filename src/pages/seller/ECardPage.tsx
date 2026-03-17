@@ -55,7 +55,7 @@ const ECardPage = () => {
 
             {/* Puchk Tool badge (mock) */}
             <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-puchk-orange/20 text-[9px] font-bold text-puchk-orange border border-puchk-orange/20">
-              Créé avec Puchk Tool ⚡
+              Créé avec Puchk Tool
             </div>
           </div>
         </div>
