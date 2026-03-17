@@ -116,7 +116,6 @@ const MarketplacePage = ({ onPlay }: MarketplacePageProps) => {
 
         {/* Grid */}
         <MarketplaceGrid filtered={filtered} onPlay={onPlay} showFilters={showFilters} />
-        </div>
       </div>
     </div>
   );
