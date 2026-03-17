@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
@@ -35,55 +35,129 @@ const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-/* ── Floating particles ── */
-const Particles = () => {
+/* ── EQ Particles (equalizer bar style) ── */
+const EQParticles = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
   const particles = useMemo(() =>
     [...Array(14)].map((_, i) => ({
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      size: 2 + Math.random() * 2,
-      duration: 5 + Math.random() * 7,
-      delay: Math.random() * 5,
-    })),
-    []
+      left: 5 + Math.random() * 90,
+      top: 10 + Math.random() * 80,
+      barCount: 2 + Math.floor(Math.random() * 3),
+      duration: 8 + Math.random() * 12,
+      delay: Math.random() * 6,
+      rotation: -15 + Math.random() * 30,
+    })), []
   );
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full bg-puchk-orange/20"
-          style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
-          animate={{ y: [-15, 15, -15], x: [-8, 8, -8], opacity: [0.1, 0.4, 0.1] }}
-          transition={{ repeat: Infinity, duration: p.duration, delay: p.delay, ease: "easeInOut" }}
-        />
-      ))}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+      {particles.map((p, i) => {
+        let dx = 0, dy = 0;
+        if (mousePos) {
+          const px = p.left / 100;
+          const py = p.top / 100;
+          const dist = Math.sqrt((mousePos.x - px) ** 2 + (mousePos.y - py) ** 2);
+          if (dist < 0.2) {
+            const force = (0.2 - dist) * 80;
+            dx = (px - mousePos.x) * force;
+            dy = (py - mousePos.y) * force;
+          }
+        }
+        return (
+          <div
+            key={i}
+            className="absolute flex items-end gap-[1px]"
+            style={{
+              left: `${p.left}%`,
+              top: `${p.top}%`,
+              transform: `rotate(${p.rotation}deg) translate(${dx}px, ${dy}px)`,
+              transition: "transform 400ms ease-out",
+              animation: `float ${p.duration}s ease-in-out ${p.delay}s infinite`,
+            }}
+          >
+            {[...Array(p.barCount)].map((_, j) => (
+              <div
+                key={j}
+                className="w-[2px] rounded-full bg-puchk-orange/15"
+                style={{
+                  animation: `eq-bar ${0.6 + Math.random() * 1.2}s ease-in-out ${j * 0.15}s infinite`,
+                }}
+              />
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-/* ── Waveform SVG background ── */
-const WaveformBG = () => (
-  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-60" preserveAspectRatio="none" viewBox="0 0 1200 400">
-    {[0, 1, 2, 3].map((i) => (
-      <motion.path
-        key={i}
-        d={`M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? -25 : 25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`}
-        fill="none"
-        stroke="rgba(255,107,26,0.05)"
-        strokeWidth="1"
-        animate={{
-          d: [
-            `M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? -25 : 25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`,
-            `M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? 25 : -25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`,
-          ],
-        }}
-        transition={{ repeat: Infinity, repeatType: "reverse", duration: 8 + i * 2, ease: "easeInOut" }}
-      />
-    ))}
-  </svg>
-);
+/* ── Audio Visualizer Background (mouse-reactive waveform mesh) ── */
+const AudioVisualizer = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
+  const lineCount = 9;
+  const lines = useMemo(() =>
+    [...Array(lineCount)].map((_, i) => ({
+      yBase: (i + 1) / (lineCount + 1),
+      opacity: 0.04 + (1 - Math.abs(i - lineCount / 2) / (lineCount / 2)) * 0.08,
+      freq: 1 + Math.random() * 2,
+      speed: 6 + Math.random() * 8,
+      phase: Math.random() * Math.PI * 2,
+      amplitude: 15 + Math.random() * 15,
+    })), []
+  );
+
+  const [time, setTime] = useState(0);
+  useEffect(() => {
+    let frame: number;
+    const animate = () => {
+      setTime(t => t + 0.008);
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const generatePath = useCallback((line: typeof lines[0], t: number) => {
+    const points = 80;
+    let d = "";
+    for (let j = 0; j <= points; j++) {
+      const x = (j / points) * 1200;
+      const xNorm = j / points;
+      const yCenter = line.yBase * 400;
+
+      let amp = line.amplitude;
+      if (mousePos) {
+        const dist = Math.abs(mousePos.y - line.yBase);
+        if (dist < 0.15) {
+          amp *= 1 + (0.15 - dist) / 0.15 * 0.6;
+        }
+        const xDist = Math.abs(mousePos.x - xNorm);
+        if (xDist < 0.15) {
+          amp *= 1 + (0.15 - xDist) / 0.15 * 0.4;
+        }
+      }
+
+      const y = yCenter + Math.sin(xNorm * line.freq * Math.PI * 2 + t * (6 / line.speed) + line.phase) * amp
+                        + Math.sin(xNorm * line.freq * Math.PI * 4 + t * (4 / line.speed)) * amp * 0.3;
+
+      d += j === 0 ? `M${x},${y}` : ` L${x},${y}`;
+    }
+    return d;
+  }, [mousePos]);
+
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none z-[0]" preserveAspectRatio="none" viewBox="0 0 1200 400">
+      {lines.map((line, i) => (
+        <path
+          key={i}
+          d={generatePath(line, time)}
+          fill="none"
+          stroke={`rgba(255,107,26,${line.opacity})`}
+          strokeWidth="1.5"
+          style={{ transition: "d 400ms ease-out" }}
+        />
+      ))}
+    </svg>
+  );
+};
 
 /* ── Scroll reveal wrapper ── */
 const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
@@ -93,9 +167,9 @@ const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 25 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -165,10 +239,17 @@ const HomePage = ({ onPlay }: HomePageProps) => {
   const promoKit = kits[10];
   const hotKits = [...kits].sort((a, b) => b.sales - a.sales).slice(0, 8);
   const staffPicks = [kits[0], kits[2], kits[8]];
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hoveringHero, setHoveringHero] = useState(false);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const heroRef = useRef<HTMLElement>(null);
+
+  // Hot kits carousel state
+  const hotScrollRef = useRef<HTMLDivElement>(null);
+  const [hotPage, setHotPage] = useState(0);
+  const hotCardsPerPage = 4; // desktop shows 4
+  const hotTotalPages = Math.ceil(hotKits.length / hotCardsPerPage);
 
   useEffect(() => {
     if (hoveringHero) return;
@@ -176,228 +257,225 @@ const HomePage = ({ onPlay }: HomePageProps) => {
     return () => clearInterval(timer);
   }, [hoveringHero]);
 
-  const scroll = (dir: number) => {
-    scrollRef.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
+  const handleHeroMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    setMousePos({
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+    });
+  }, []);
+
+  const handleHeroMouseLeave = useCallback(() => {
+    setHoveringHero(false);
+    setMousePos(null);
+  }, []);
+
+  const scrollHotKits = (dir: number) => {
+    const next = Math.max(0, Math.min(hotTotalPages - 1, hotPage + dir));
+    setHotPage(next);
+    if (hotScrollRef.current) {
+      const cardWidth = hotScrollRef.current.scrollWidth / hotKits.length;
+      hotScrollRef.current.scrollTo({ left: next * hotCardsPerPage * cardWidth, behavior: "smooth" });
+    }
   };
 
-  const renderSlideRight = (slideIndex: number) => {
+  const renderSlide = (slideIndex: number) => {
     switch (heroSlides[slideIndex].type) {
       case "kit":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="kit">
-            <div className="p-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-4 flex items-center gap-1.5">
-                <Star className="w-3 h-3 fill-yellow-400" /> KIT DE LA SEMAINE
-              </div>
-              <div className="rounded-xl overflow-hidden mb-4 relative group">
-                <KitCover genre={weekKit.genre} title={weekKit.name} producer={weekKit.producer} aspectRatio="1/1" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
-                  <button onClick={() => onPlay(weekKit)} className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
-                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold">{weekKit.name}</h3>
-                  <p className="text-xs text-secondary-puchk">{weekKit.producer}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                    <span className="text-xs text-secondary-puchk">{weekKit.rating}</span>
+          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-16 py-20" key="slide-kit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            {/* Left */}
+            <div className="flex-1 max-w-xl">
+              <motion.h1
+                className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {"PUCHK".split("").map((letter, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    className="inline-block"
+                  >
+                    {letter}
+                  </motion.span>
+                ))}
+              </motion.h1>
+              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                Les meilleurs drum kits du game.
+              </motion.p>
+              <motion.div className="flex gap-3 mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                <Link to="/marketplace" className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl btn-orange-glow btn-press">
+                  Explorer la marketplace →
+                </Link>
+                <Link to="/dashboard" className="px-6 py-3 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
+                  Commencer à vendre
+                </Link>
+              </motion.div>
+              <div className="flex gap-10">
+                {[
+                  { value: 2400, label: "kits", suffix: "+" },
+                  { value: 850, label: "producteurs", suffix: "+" },
+                  { value: 25000, label: "ventes", suffix: "+" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className="text-3xl font-black tracking-tight">
+                      <AnimCounter target={s.value} suffix={s.suffix} />
+                    </div>
+                    <div className="text-xs text-secondary-puchk mt-1">{s.label}</div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black text-puchk-orange">{weekKit.price}€</div>
-                  <Link to={`/kit/${weekKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Découvrir →</Link>
-                </div>
+                ))}
               </div>
             </div>
+            {/* Right - Kit card */}
+            <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }}>
+              <div className="p-5">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-4 flex items-center gap-1.5">
+                  <Star className="w-3 h-3 fill-yellow-400" /> KIT DE LA SEMAINE
+                </div>
+                <div className="rounded-xl overflow-hidden mb-4 relative group">
+                  <KitCover genre={weekKit.genre} title={weekKit.name} producer={weekKit.producer} aspectRatio="1/1" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
+                    <button onClick={() => onPlay(weekKit)} className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
+                      <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold">{weekKit.name}</h3>
+                    <p className="text-xs text-secondary-puchk">{weekKit.producer}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-black text-puchk-orange">{weekKit.price}€</div>
+                    <Link to={`/kit/${weekKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Découvrir →</Link>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         );
 
       case "tool":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden liquid-glass puchk-shadow p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="tool">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4">🛠 PUCHK TOOL</div>
-            <div className="bg-black/30 rounded-xl p-4 mb-4 space-y-2 border border-white/[0.04]">
-              <div className="flex items-center gap-2 text-xs text-puchk-orange"><Folder className="w-3.5 h-3.5" /> My Drum Kit/</div>
-              <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> Kicks/</div>
-              <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> kick_hard_01.wav</div>
-              <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> 808s/</div>
-              <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> 808_sub_distorted.wav</div>
-              <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> Hi-Hats/</div>
-            </div>
-            <h3 className="text-lg font-bold mb-1">Crée ton drumkit de A à Z</h3>
-            <p className="text-xs text-secondary-puchk mb-4 leading-relaxed">Importe tes sons, organise-les en dossiers, personnalise pour FL Studio, et exporte un ZIP prêt à vendre.</p>
-            <div className="flex gap-2">
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
-                Ouvrir Puchk Tool <ArrowRight className="w-3.5 h-3.5" />
+          <motion.div className="relative z-[2] max-w-4xl mx-auto px-6 w-full text-center py-20" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}>
+              <Wrench className="w-8 h-8 text-puchk-orange" />
+            </motion.div>
+            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              Crée ton drumkit de A à Z
+            </motion.h2>
+            <motion.p className="text-base text-secondary-puchk max-w-2xl mx-auto mb-8 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+              Puchk Tool est un outil de création de drumkits dans le navigateur. Importe tes sons, organise-les en dossiers (Kicks, Snares, Hi-Hats, 808...), personnalise les icônes et couleurs pour FL Studio, et exporte un kit ZIP prêt à vendre sur la marketplace.
+            </motion.p>
+            {/* File tree visual */}
+            <motion.div className="liquid-glass rounded-2xl p-5 max-w-xs mx-auto mb-8 text-left" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-puchk-orange font-semibold"><Folder className="w-3.5 h-3.5" /> My Drum Kit/</div>
+                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-red-400" /> Kicks/</div>
+                <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> kick_hard_01.wav</div>
+                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-blue-400" /> 808s/</div>
+                <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> 808_sub.wav</div>
+                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-yellow-400" /> Hi-Hats/</div>
+                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-purple-400" /> Snares/</div>
+              </div>
+            </motion.div>
+            <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
+                Ouvrir Puchk Tool <ArrowRight className="w-4 h-4" />
               </a>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2.5 bg-white/5 border border-white/10 text-xs font-semibold rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-3.5 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
                 En savoir plus
               </a>
-            </div>
+            </motion.div>
           </motion.div>
         );
 
       case "producers":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden liquid-glass puchk-shadow p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="producers">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" /> COMMUNAUTÉ
-            </div>
-            <h3 className="text-2xl font-bold mb-2">Rejoins 850+ producteurs</h3>
-            <p className="text-sm text-secondary-puchk mb-5 leading-relaxed">Publie tes kits, définis tes prix, garde 85% de chaque vente.</p>
-            <div className="flex gap-5 mb-6">
+          <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center py-20" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}>
+              <Users className="w-8 h-8 text-puchk-orange" />
+            </motion.div>
+            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
+            </motion.h2>
+            <motion.p className="text-base text-secondary-puchk mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+              Publie tes kits, définis tes prix, garde 85% de chaque vente.
+            </motion.p>
+            <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
               {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
                 <div key={s.l} className="text-center">
-                  <div className="text-lg font-black text-puchk-orange">{s.v}</div>
-                  <div className="text-[9px] text-secondary-puchk uppercase tracking-wider">{s.l}</div>
+                  <div className="text-3xl font-black text-puchk-orange">{s.v}</div>
+                  <div className="text-xs text-secondary-puchk uppercase tracking-wider mt-1">{s.l}</div>
                 </div>
               ))}
-            </div>
-            <Link to="/dashboard" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
-              Commencer à vendre <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            </motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+              <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
+                Commencer à vendre <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
           </motion.div>
         );
 
       case "promo":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="promo">
-            <div className="p-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-4 flex items-center gap-1">🆕 NOUVEAU</div>
-              <div className="rounded-xl overflow-hidden mb-4 relative group">
-                <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
-                  <button onClick={() => onPlay(promoKit)} className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
-                    <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                  </button>
-                </div>
+          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 py-20" key="slide-promo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+            {/* Left - Large cover */}
+            <motion.div className="flex-1 max-w-lg rounded-2xl overflow-hidden" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+              <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
+            </motion.div>
+            {/* Right - Info */}
+            <motion.div className="flex-1 max-w-md" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3">{promoKit.name}</h2>
+              <p className="text-secondary-puchk mb-2">par <span className="text-puchk-orange">{promoKit.producer}</span></p>
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <span className="text-sm text-secondary-puchk">{promoKit.rating} · {promoKit.sales.toLocaleString()} ventes</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold">{promoKit.name}</h3>
-                  <p className="text-xs text-secondary-puchk">{promoKit.producer}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black text-puchk-orange">{promoKit.price}€</div>
-                  <Link to={`/kit/${promoKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Découvrir →</Link>
-                </div>
-              </div>
-            </div>
+              <div className="text-4xl font-black text-puchk-orange mb-6">{promoKit.price}€</div>
+              <Link to={`/kit/${promoKit.id}`} className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
+                Découvrir <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
           </motion.div>
         );
     }
-  };
-
-  const slideTexts = [
-    { title: "Les meilleurs drum kits du game.", cta1: "Explorer la marketplace →", cta1Link: "/marketplace", cta2: "Commencer à vendre", cta2Link: "/dashboard" },
-    { title: "Crée, organise et publie tes drum kits.", cta1: "Ouvrir Puchk Tool →", cta1Link: "https://tool.puchk.com", cta2: "En savoir plus", cta2Link: "https://tool.puchk.com", external: true },
-    { title: "Publie tes kits, définis tes prix, garde 85%.", cta1: "Devenir vendeur →", cta1Link: "/dashboard", cta2: "Voir les producteurs", cta2Link: "/producers" },
-    { title: "Découvre les dernières sorties.", cta1: "Nouveautés →", cta1Link: "/marketplace", cta2: "Charts", cta2Link: "/charts" },
-  ];
-
-  const CtaLink = ({ to, external, children, className }: { to: string; external?: boolean; children: React.ReactNode; className: string }) => {
-    if (external) return <a href={to} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
-    return <Link to={to} className={className}>{children}</Link>;
   };
 
   return (
     <div className="min-h-screen pt-16">
       {/* ===== HERO CAROUSEL ===== */}
       <section
+        ref={heroRef}
         className="relative min-h-[600px] max-h-[80vh] flex items-center overflow-hidden"
         onMouseEnter={() => setHoveringHero(true)}
-        onMouseLeave={() => setHoveringHero(false)}
+        onMouseLeave={handleHeroMouseLeave}
+        onMouseMove={handleHeroMouseMove}
       >
         {/* Background effects */}
-        <WaveformBG />
-        <Particles />
-        
+        <AudioVisualizer mousePos={mousePos} />
+        <EQParticles mousePos={mousePos} />
+
         {/* Halo lumineux */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] animate-halo pointer-events-none" />
-        
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-[0]"
+          style={{
+            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,26,0.06) 0%, transparent 50%)",
+            animation: "halo-pulse 6s ease-in-out infinite",
+          }}
+        />
+
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1]" />
         <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
 
-        <div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-16 py-20">
-          {/* Left */}
-          <div className="flex-1 max-w-xl">
-            <motion.h1
-              className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              {"PUCHK".split("").map((letter, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                  className="inline-block"
-                >
-                  {letter}
-                </motion.span>
-              ))}
-            </motion.h1>
-
-            <AnimatePresence mode="wait">
-              <motion.p
-                className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed"
-                key={currentSlide}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {slideTexts[currentSlide].title}
-              </motion.p>
-            </AnimatePresence>
-
-            <AnimatePresence mode="wait">
-              <motion.div className="flex gap-3 mb-12" key={`cta-${currentSlide}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.1 }}>
-                <CtaLink
-                  to={slideTexts[currentSlide].cta1Link}
-                  external={(slideTexts[currentSlide] as any).external}
-                  className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press hover:scale-[1.02] hover:brightness-110"
-                >
-                  {slideTexts[currentSlide].cta1}
-                </CtaLink>
-                <CtaLink
-                  to={slideTexts[currentSlide].cta2Link}
-                  external={(slideTexts[currentSlide] as any).external}
-                  className="px-6 py-3 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press backdrop-blur-sm"
-                >
-                  {slideTexts[currentSlide].cta2}
-                </CtaLink>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Stats */}
-            <div className="flex gap-10">
-              {[
-                { value: 2400, label: "kits", suffix: "+" },
-                { value: 850, label: "producteurs", suffix: "+" },
-                { value: 25000, label: "ventes", suffix: "+" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="text-3xl font-black tracking-tight">
-                    <AnimCounter target={s.value} suffix={s.suffix} />
-                  </div>
-                  <div className="text-xs text-secondary-puchk mt-1">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right - Carousel slides */}
-          <div className="w-full max-w-sm relative min-h-[400px] flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {renderSlideRight(currentSlide)}
-            </AnimatePresence>
-          </div>
-        </div>
+        <AnimatePresence mode="wait">
+          {renderSlide(currentSlide)}
+        </AnimatePresence>
 
         {/* Carousel controls */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3">
@@ -422,7 +500,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       {/* ===== TRENDING TAGS ===== */}
       <ScrollReveal>
         <section className="bg-[var(--bg-warm)] py-5">
-          <div className="max-w-6xl mx-auto px-6 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          <div className="max-w-7xl mx-auto px-6 flex items-center gap-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange flex-shrink-0">Tendances</span>
             {trendingTags.map((tag, i) => (
               <motion.button
@@ -440,8 +518,8 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         </section>
       </ScrollReveal>
 
-      {/* ===== HOT THIS WEEK ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-28">
+      {/* ===== HOT THIS WEEK (Fixed carousel) ===== */}
+      <section className="max-w-7xl mx-auto px-6 py-28">
         <ScrollReveal>
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -449,21 +527,34 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <h2 className="text-4xl font-black tracking-tight mt-1">Kits les plus vendus</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => scroll(-1)} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+              <button onClick={() => scrollHotKits(-1)} disabled={hotPage === 0} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
                 <ChevronLeft className="w-5 h-5 text-white/50" />
               </button>
-              <button onClick={() => scroll(1)} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+              <button onClick={() => scrollHotKits(1)} disabled={hotPage >= hotTotalPages - 1} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
                 <ChevronRight className="w-5 h-5 text-white/50" />
               </button>
             </div>
           </div>
         </ScrollReveal>
 
-        <div ref={scrollRef} className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none" }}>
-          {hotKits.map((kit, i) => (
-            <div key={kit.id} className="min-w-[260px] max-w-[280px] snap-start flex-shrink-0">
-              <ProductCard kit={kit} onPlay={onPlay} index={i} />
-            </div>
+        <div ref={hotScrollRef} className="overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {hotKits.slice(hotPage * hotCardsPerPage, (hotPage + 1) * hotCardsPerPage).map((kit, i) => (
+              <ScrollReveal key={kit.id} delay={i * 0.08}>
+                <ProductCard kit={kit} onPlay={onPlay} index={i} />
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+
+        {/* Page dots */}
+        <div className="flex justify-center gap-2 mt-6">
+          {[...Array(hotTotalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setHotPage(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${i === hotPage ? "bg-puchk-orange w-6" : "bg-white/15 w-1.5"}`}
+            />
           ))}
         </div>
 
@@ -479,7 +570,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== STAFF PICKS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-28">
+      <section className="max-w-7xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">curated</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Staff Picks</h2>
@@ -520,7 +611,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== ÉCOUTE NOS KITS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-28">
+      <section className="max-w-7xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">previews</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Écoute nos kits</h2>
@@ -538,7 +629,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== RISING PRODUCERS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-28">
+      <section className="max-w-7xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">producteurs</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Rising Producers</h2>
@@ -558,13 +649,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       {/* ===== TESTIMONIALS ===== */}
       <section className="py-28 overflow-hidden">
         <ScrollReveal>
-          <div className="max-w-6xl mx-auto px-6 mb-10">
+          <div className="max-w-7xl mx-auto px-6 mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">témoignages</span>
             <h2 className="text-4xl font-black tracking-tight mt-1">Ce qu'ils disent</h2>
           </div>
         </ScrollReveal>
 
-        {/* Marquee */}
         <div className="relative">
           <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
             {[...testimonials, ...testimonials].map((t, i) => (
@@ -590,7 +680,6 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       {/* ===== CTA FINAL ===== */}
       <section className="py-36 relative">
-        {/* Halo central */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] animate-halo pointer-events-none" />
 
         <ScrollReveal>
@@ -602,10 +691,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               Commence gratuitement. Rejoins la communauté PUCHK.
             </p>
             <div className="flex justify-center gap-3">
-              <Link to="/marketplace" className="px-7 py-3.5 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
+              <Link to="/marketplace" className="px-7 py-3.5 bg-puchk-orange text-white font-semibold text-sm rounded-xl btn-orange-glow btn-press">
                 Explorer les kits
               </Link>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press backdrop-blur-sm">
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
                 Essayer Puchk Tool →
               </a>
             </div>
