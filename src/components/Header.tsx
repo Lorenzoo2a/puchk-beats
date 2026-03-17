@@ -99,9 +99,9 @@ const Header = () => {
               href={link.path}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-puchk-orange hover:text-puchk-orange-hover spring-transition flex items-center gap-1"
+              className="text-sm font-medium text-puchk-orange hover:text-puchk-orange-hover spring-transition flex items-center gap-1.5"
             >
-              🛠 {link.label}
+              <Wrench className="w-3.5 h-3.5" /> {link.label}
             </a>
           ) : (
             <Link
