@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { BarChart3, Package, Upload, DollarSign, TrendingUp, Tag, User, LayoutDashboard } from "lucide-react";
+import { BarChart3, Package, Upload, DollarSign, TrendingUp, Tag, User, LayoutDashboard, Megaphone, Image } from "lucide-react";
 
 const links = [
   { icon: LayoutDashboard, label: "Tableau de bord", path: "/dashboard" },
@@ -8,6 +8,8 @@ const links = [
   { icon: DollarSign, label: "Ventes", path: "/dashboard/sales" },
   { icon: BarChart3, label: "Analytics", path: "/dashboard/analytics" },
   { icon: Tag, label: "Codes Promo", path: "/dashboard/promos" },
+  { icon: Megaphone, label: "Mise en avant", path: "/dashboard/promote" },
+  { icon: Image, label: "E-Cards", path: "/dashboard/ecards" },
   { icon: User, label: "Paramètres", path: "/dashboard/profile" },
 ];
 
@@ -16,7 +18,7 @@ const SellerLayout = () => {
 
   return (
     <div className="min-h-screen pt-16 flex">
-      <aside className="hidden lg:flex w-60 flex-shrink-0 bg-puchk-deep border-r border-[rgba(255,107,26,0.08)] flex-col fixed top-16 bottom-0 left-0 z-40">
+      <aside className="hidden lg:flex w-60 flex-shrink-0 bg-[var(--bg-deep)] border-r border-[var(--glass-border)] flex-col fixed top-16 bottom-0 left-0 z-40 liquid-glass-strong !rounded-none">
         <div className="p-4 border-b border-[rgba(255,107,26,0.08)]">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-puchk-orange flex items-center justify-center shadow-[0_0_10px_rgba(255,107,26,0.3)]">
