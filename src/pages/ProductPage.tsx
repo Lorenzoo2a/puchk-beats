@@ -5,6 +5,7 @@ import { kits, genreLabels, Kit } from "@/data/mockData";
 import KitCover from "@/components/KitCover";
 import ProductCard from "@/components/ProductCard";
 import { useState, useRef } from "react";
+import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 
 interface ProductPageProps {
   onPlay: (kit: Kit) => void;
