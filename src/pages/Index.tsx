@@ -79,7 +79,7 @@ const WaveformBG = () => (
             `M0,${200 + i * 35} ${Array.from({ length: 12 }, (_, j) => `Q${j * 100 + 50},${200 + i * 35 + (j % 2 === 0 ? 25 : -25)} ${(j + 1) * 100},${200 + i * 35}`).join(" ")}`,
           ],
         }}
-        transition={{ repeat: Infinity, repeatType: "reverse", duration: 7 + i, ease: "easeInOut" }}
+        transition={{ repeat: Infinity, repeatType: "reverse", duration: 8 + i * 2, ease: "easeInOut" }}
       />
     ))}
   </svg>
@@ -120,7 +120,7 @@ const MiniPlayer = ({ kit, onPlay }: { kit: Kit; onPlay: (k: Kit) => void }) => 
   }, [isPlaying]);
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300 group">
+    <div className="flex items-center gap-3 p-3 rounded-xl liquid-glass hover:border-white/[0.12] transition-all duration-300 group">
       <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
         <KitCover genre={kit.genre} title="" producer="" aspectRatio="1/1" />
       </div>
@@ -130,7 +130,7 @@ const MiniPlayer = ({ kit, onPlay }: { kit: Kit; onPlay: (k: Kit) => void }) => 
       </div>
       <button
         onClick={() => { setIsPlaying(!isPlaying); onPlay(kit); }}
-        className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-puchk-orange transition-colors flex-shrink-0 btn-press"
+        className={`w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-puchk-orange transition-colors flex-shrink-0 btn-press ${isPlaying ? "animate-pulse-glow bg-puchk-orange" : ""}`}
       >
         {isPlaying ? <Pause className="w-3.5 h-3.5 text-white fill-white" /> : <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />}
       </button>
@@ -184,8 +184,8 @@ const HomePage = ({ onPlay }: HomePageProps) => {
     switch (heroSlides[slideIndex].type) {
       case "kit":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] animate-border-glow puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="kit">
-            <div className="bg-white/[0.03] backdrop-blur-xl p-5">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="kit">
+            <div className="p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-4 flex items-center gap-1.5">
                 <Star className="w-3 h-3 fill-yellow-400" /> KIT DE LA SEMAINE
               </div>
@@ -217,7 +217,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "tool":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] puchk-shadow bg-white/[0.03] backdrop-blur-xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="tool">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden liquid-glass puchk-shadow p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="tool">
             <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4">🛠 PUCHK TOOL</div>
             <div className="bg-black/30 rounded-xl p-4 mb-4 space-y-2 border border-white/[0.04]">
               <div className="flex items-center gap-2 text-xs text-puchk-orange"><Folder className="w-3.5 h-3.5" /> My Drum Kit/</div>
@@ -228,23 +228,28 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3" /> Hi-Hats/</div>
             </div>
             <h3 className="text-lg font-bold mb-1">Crée ton drumkit de A à Z</h3>
-            <p className="text-xs text-secondary-puchk mb-4 leading-relaxed">Organise tes sons, personnalise pour FL Studio, et exporte un kit prêt à vendre.</p>
-            <a href="#" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
-              Ouvrir Puchk Tool <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+            <p className="text-xs text-secondary-puchk mb-4 leading-relaxed">Importe tes sons, organise-les en dossiers, personnalise pour FL Studio, et exporte un ZIP prêt à vendre.</p>
+            <div className="flex gap-2">
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-puchk-orange text-white text-xs font-bold rounded-xl hover:bg-puchk-orange-hover transition-colors btn-press">
+                Ouvrir Puchk Tool <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2.5 bg-white/5 border border-white/10 text-xs font-semibold rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+                En savoir plus
+              </a>
+            </div>
           </motion.div>
         );
 
       case "producers":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] puchk-shadow bg-white/[0.03] backdrop-blur-xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="producers">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden liquid-glass puchk-shadow p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="producers">
             <div className="text-[10px] font-bold uppercase tracking-widest text-puchk-orange mb-4 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" /> COMMUNAUTÉ
             </div>
             <h3 className="text-2xl font-bold mb-2">Rejoins 850+ producteurs</h3>
-            <p className="text-sm text-secondary-puchk mb-5 leading-relaxed">Publie tes kits, touche 85% de chaque vente.</p>
+            <p className="text-sm text-secondary-puchk mb-5 leading-relaxed">Publie tes kits, définis tes prix, garde 85% de chaque vente.</p>
             <div className="flex gap-5 mb-6">
-              {[{ v: "850+", l: "Producteurs" }, { v: "25k+", l: "Ventes" }, { v: "85%", l: "Tu gardes" }].map((s) => (
+              {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
                 <div key={s.l} className="text-center">
                   <div className="text-lg font-black text-puchk-orange">{s.v}</div>
                   <div className="text-[9px] text-secondary-puchk uppercase tracking-wider">{s.l}</div>
@@ -259,8 +264,8 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "promo":
         return (
-          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden border border-white/[0.08] animate-border-glow puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="promo">
-            <div className="bg-white/[0.03] backdrop-blur-xl p-5">
+          <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }} key="promo">
+            <div className="p-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-4 flex items-center gap-1">🆕 NOUVEAU</div>
               <div className="rounded-xl overflow-hidden mb-4 relative group">
                 <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
@@ -277,7 +282,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-puchk-orange">{promoKit.price}€</div>
-                  <Link to={`/kit/${promoKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Voir →</Link>
+                  <Link to={`/kit/${promoKit.id}`} className="text-[10px] text-puchk-orange hover:underline">Découvrir →</Link>
                 </div>
               </div>
             </div>
@@ -288,13 +293,18 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
   const slideTexts = [
     { title: "Les meilleurs drum kits du game.", cta1: "Explorer la marketplace →", cta1Link: "/marketplace", cta2: "Commencer à vendre", cta2Link: "/dashboard" },
-    { title: "Crée, organise et publie tes drum kits.", cta1: "Ouvrir Puchk Tool →", cta1Link: "#", cta2: "En savoir plus", cta2Link: "#" },
-    { title: "Rejoins la communauté de producteurs.", cta1: "Devenir vendeur →", cta1Link: "/dashboard", cta2: "Voir les producteurs", cta2Link: "/producers" },
+    { title: "Crée, organise et publie tes drum kits.", cta1: "Ouvrir Puchk Tool →", cta1Link: "https://tool.puchk.com", cta2: "En savoir plus", cta2Link: "https://tool.puchk.com", external: true },
+    { title: "Publie tes kits, définis tes prix, garde 85%.", cta1: "Devenir vendeur →", cta1Link: "/dashboard", cta2: "Voir les producteurs", cta2Link: "/producers" },
     { title: "Découvre les dernières sorties.", cta1: "Nouveautés →", cta1Link: "/marketplace", cta2: "Charts", cta2Link: "/charts" },
   ];
 
+  const CtaLink = ({ to, external, children, className }: { to: string; external?: boolean; children: React.ReactNode; className: string }) => {
+    if (external) return <a href={to} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+    return <Link to={to} className={className}>{children}</Link>;
+  };
+
   return (
-    <div className="min-h-screen pt-16 page-enter">
+    <div className="min-h-screen pt-16">
       {/* ===== HERO CAROUSEL ===== */}
       <section
         className="relative min-h-[600px] max-h-[80vh] flex items-center overflow-hidden"
@@ -347,12 +357,20 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
             <AnimatePresence mode="wait">
               <motion.div className="flex gap-3 mb-12" key={`cta-${currentSlide}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: 0.1 }}>
-                <Link to={slideTexts[currentSlide].cta1Link} className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
+                <CtaLink
+                  to={slideTexts[currentSlide].cta1Link}
+                  external={(slideTexts[currentSlide] as any).external}
+                  className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press hover:scale-[1.02] hover:brightness-110"
+                >
                   {slideTexts[currentSlide].cta1}
-                </Link>
-                <Link to={slideTexts[currentSlide].cta2Link} className="px-6 py-3 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+                </CtaLink>
+                <CtaLink
+                  to={slideTexts[currentSlide].cta2Link}
+                  external={(slideTexts[currentSlide] as any).external}
+                  className="px-6 py-3 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press backdrop-blur-sm"
+                >
                   {slideTexts[currentSlide].cta2}
-                </Link>
+                </CtaLink>
               </motion.div>
             </AnimatePresence>
 
@@ -383,7 +401,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
         {/* Carousel controls */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3">
-          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronLeft className="w-4 h-4 text-white/60" />
           </button>
           <div className="flex gap-2">
@@ -395,7 +413,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               />
             ))}
           </div>
-          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-8 h-8 rounded-full bg-white/5 backdrop-blur flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronRight className="w-4 h-4 text-white/60" />
           </button>
         </div>
@@ -413,7 +431,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05, duration: 0.5 }}
-                className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-xs text-secondary-puchk hover:text-puchk-orange hover:border-puchk-orange/20 hover:bg-puchk-orange/[0.05] transition-all duration-300 btn-press"
+                className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-xs text-secondary-puchk hover:text-puchk-orange hover:border-puchk-orange/20 hover:bg-puchk-orange/[0.05] hover:backdrop-blur-sm transition-all duration-300 btn-press tag-flash"
               >
                 {tag}
               </motion.button>
@@ -423,7 +441,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       </ScrollReveal>
 
       {/* ===== HOT THIS WEEK ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
+      <section className="max-w-6xl mx-auto px-6 py-28">
         <ScrollReveal>
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -431,10 +449,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <h2 className="text-4xl font-black tracking-tight mt-1">Kits les plus vendus</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => scroll(-1)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+              <button onClick={() => scroll(-1)} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
                 <ChevronLeft className="w-5 h-5 text-white/50" />
               </button>
-              <button onClick={() => scroll(1)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+              <button onClick={() => scroll(1)} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
                 <ChevronRight className="w-5 h-5 text-white/50" />
               </button>
             </div>
@@ -461,7 +479,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== STAFF PICKS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
+      <section className="max-w-6xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">curated</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Staff Picks</h2>
@@ -502,7 +520,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== ÉCOUTE NOS KITS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
+      <section className="max-w-6xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">previews</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Écoute nos kits</h2>
@@ -520,7 +538,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== RISING PRODUCERS ===== */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
+      <section className="max-w-6xl mx-auto px-6 py-28">
         <ScrollReveal>
           <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">producteurs</span>
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Rising Producers</h2>
@@ -538,7 +556,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="py-24 overflow-hidden">
+      <section className="py-28 overflow-hidden">
         <ScrollReveal>
           <div className="max-w-6xl mx-auto px-6 mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-puchk-orange">témoignages</span>
@@ -550,7 +568,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         <div className="relative">
           <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
             {[...testimonials, ...testimonials].map((t, i) => (
-              <div key={i} className="w-[340px] flex-shrink-0 bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6">
+              <div key={i} className="w-[340px] flex-shrink-0 liquid-glass rounded-2xl p-6">
                 <div className="text-2xl mb-3">{t.emoji}</div>
                 <p className="text-sm text-white/80 leading-relaxed italic mb-4">"{t.text}"</p>
                 <div className="flex items-center gap-2">
@@ -571,9 +589,9 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       <div className="section-divider" />
 
       {/* ===== CTA FINAL ===== */}
-      <section className="py-32 relative">
+      <section className="py-36 relative">
         {/* Halo central */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(255,107,26,0.06)_0%,transparent_60%)] animate-halo pointer-events-none" />
 
         <ScrollReveal>
           <div className="max-w-2xl mx-auto px-6 text-center relative z-10">
@@ -584,10 +602,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               Commence gratuitement. Rejoins la communauté PUCHK.
             </p>
             <div className="flex justify-center gap-3">
-              <Link to="/marketplace" className="px-7 py-3.5 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
+              <Link to="/marketplace" className="px-7 py-3.5 bg-puchk-orange text-white font-semibold text-sm rounded-xl hover:bg-puchk-orange-hover hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(255,107,26,0.2)] btn-press">
                 Explorer les kits
               </Link>
-              <a href="#" className="px-7 py-3.5 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press">
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-7 py-3.5 bg-white/5 border border-white/10 font-semibold text-sm rounded-xl hover:text-puchk-orange hover:border-white/20 transition-all btn-press backdrop-blur-sm">
                 Essayer Puchk Tool →
               </a>
             </div>

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import GlobalPlayer from "@/components/GlobalPlayer";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import HomePage from "./pages/Index";
 import ProductPage from "./pages/ProductPage";
 import MarketplacePage from "./pages/MarketplacePage";
@@ -81,7 +82,7 @@ const AppContent = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
           <Routes location={location}>
             <Route path="/" element={<HomePage onPlay={setPlayingKit} />} />
@@ -139,6 +140,7 @@ const AppContent = () => {
         </motion.div>
       </AnimatePresence>
       <Footer />
+      <ScrollToTopButton />
       <AnimatePresence>
         {playingKit && <GlobalPlayer kit={playingKit} onClose={() => setPlayingKit(null)} />}
       </AnimatePresence>
