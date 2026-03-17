@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench, Mic, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Users, Wrench } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
 import KitCover from "@/components/KitCover";
 import { Link } from "react-router-dom";
+import FlowFieldCanvas from "@/components/FlowFieldCanvas";
 
 interface HomePageProps {
   onPlay: (kit: Kit) => void;
@@ -36,194 +37,9 @@ const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-/* ── Constellation Canvas Background ── */
-const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Array<{
-    x: number; y: number; vx: number; vy: number; baseX: number; baseY: number; size: number; opacity: number;
-  }>>([]);
-  const haloRef = useRef({ x: 0.5, y: 0.5 });
-  const mousePosRef = useRef(mousePos);
-  const animFrameRef = useRef<number>(0);
-
-  mousePosRef.current = mousePos;
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const resize = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect();
-      if (rect) {
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    // Init particles
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const count = 100;
-    particlesRef.current = Array.from({ length: count }, () => {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
-      return {
-        x, y, baseX: x, baseY: y,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: 1.2 + Math.random() * 1.3,
-        opacity: 0.12 + Math.random() * 0.15,
-      };
-    });
-
-    const CONNECTION_DIST = 160;
-    const MOUSE_RADIUS = 200;
-
-    const animate = () => {
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      // Fade trail instead of full clear for a glow trail effect
-      ctx.fillStyle = "rgba(0,0,0,0.15)";
-      ctx.fillRect(0, 0, cw, ch);
-
-      const mp = mousePosRef.current;
-      const mx = mp ? mp.x * cw : -9999;
-      const my = mp ? mp.y * ch : -9999;
-
-      // Lerp halo toward mouse
-      if (mp) {
-        haloRef.current.x += (mp.x - haloRef.current.x) * 0.08;
-        haloRef.current.y += (mp.y - haloRef.current.y) * 0.08;
-      }
-
-      // Draw halo that follows mouse
-      const hx = haloRef.current.x * cw;
-      const hy = haloRef.current.y * ch;
-      const haloGrad = ctx.createRadialGradient(hx, hy, 0, hx, hy, 280);
-      haloGrad.addColorStop(0, mp ? "rgba(255,107,26,0.12)" : "rgba(255,107,26,0.04)");
-      haloGrad.addColorStop(0.5, mp ? "rgba(255,107,26,0.04)" : "rgba(255,107,26,0.01)");
-      haloGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = haloGrad;
-      ctx.fillRect(0, 0, cw, ch);
-
-      const particles = particlesRef.current;
-
-      // Update positions
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Bounce
-        if (p.x < 0 || p.x > cw) p.vx *= -1;
-        if (p.y < 0 || p.y > ch) p.vy *= -1;
-        p.x = Math.max(0, Math.min(cw, p.x));
-        p.y = Math.max(0, Math.min(ch, p.y));
-
-        // Mouse attraction — stronger pull
-        if (mp) {
-          const dx = mx - p.x;
-          const dy = my - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MOUSE_RADIUS && dist > 0) {
-            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 1.5;
-            p.x += dx / dist * force;
-            p.y += dy / dist * force;
-          }
-        }
-      }
-
-      // Draw connections (spatial grid optimization)
-      const gridSize = CONNECTION_DIST;
-      const grid: Map<string, number[]> = new Map();
-      for (let i = 0; i < particles.length; i++) {
-        const gx = Math.floor(particles[i].x / gridSize);
-        const gy = Math.floor(particles[i].y / gridSize);
-        const key = `${gx},${gy}`;
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key)!.push(i);
-      }
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        const gx = Math.floor(p.x / gridSize);
-        const gy = Math.floor(p.y / gridSize);
-
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const neighbors = grid.get(`${gx + dx},${gy + dy}`);
-            if (!neighbors) continue;
-            for (const j of neighbors) {
-              if (j <= i) continue;
-              const q = particles[j];
-              const ddx = p.x - q.x;
-              const ddy = p.y - q.y;
-              const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-              if (dist < CONNECTION_DIST) {
-                const alpha = (1 - dist / CONNECTION_DIST) * 0.08;
-                let lineAlpha = alpha;
-                if (mp) {
-                  const midX = (p.x + q.x) / 2;
-                  const midY = (p.y + q.y) / 2;
-                  const mouseDist = Math.sqrt((midX - mx) ** 2 + (midY - my) ** 2);
-                  if (mouseDist < MOUSE_RADIUS) {
-                    lineAlpha = alpha + (1 - mouseDist / MOUSE_RADIUS) * 0.25;
-                  }
-                }
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(q.x, q.y);
-                ctx.strokeStyle = `rgba(255,107,26,${lineAlpha})`;
-                ctx.lineWidth = 0.6;
-                ctx.stroke();
-              }
-            }
-          }
-        }
-      }
-
-      // Draw particles — bigger + glowing near mouse
-      for (const p of particles) {
-        let drawSize = p.size;
-        let drawOpacity = p.opacity;
-        if (mp) {
-          const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-          if (dist < MOUSE_RADIUS) {
-            const proximity = 1 - dist / MOUSE_RADIUS;
-            drawSize = p.size + proximity * 3;
-            drawOpacity = Math.min(0.6, p.opacity + proximity * 0.35);
-            // Glow
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, drawSize * 3, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,107,26,${proximity * 0.06})`;
-            ctx.fill();
-          }
-        }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, drawSize, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,107,26,${drawOpacity})`;
-        ctx.fill();
-      }
-
-      animFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    animFrameRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-[0]" />;
-};
+/* ── Text shadow styles for readability ── */
+const titleShadow = { textShadow: "0 2px 10px rgba(0,0,0,0.8)" };
+const subtitleShadow = { textShadow: "0 1px 6px rgba(0,0,0,0.6)" };
 
 /* ── Scroll reveal wrapper ── */
 const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
@@ -359,44 +175,47 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "tool":
         return (
           <motion.div className="relative z-[2] max-w-5xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Wrench className="w-7 h-7 text-puchk-orange" />
-            </motion.div>
-            <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              Crée ton drumkit de A à Z
-            </motion.h2>
-            <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
-            </motion.p>
-            <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              {[
-                { icon: "🎙️", label: "Enregistrement" },
-                { icon: "🎛️", label: "Mix Panel" },
-                { icon: "📁", label: "FL Studio" },
-              ].map(f => (
-                <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
-                  <span className="text-sm">{f.icon}</span>
-                  <span className="text-[11px] font-semibold">{f.label}</span>
-                </div>
-              ))}
-            </motion.div>
-            <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-puchk-orange text-white font-black text-base rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2 animate-pulse-glow">
-                Ouvrir Puchk Tool <ArrowRight className="w-5 h-5" />
-              </a>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-4 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
-                En savoir plus
-              </a>
-            </motion.div>
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6">
+              <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+                <Wrench className="w-7 h-7 text-puchk-orange" />
+              </motion.div>
+              <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" style={titleShadow} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                Crée ton drumkit de A à Z
+              </motion.h2>
+              <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" style={subtitleShadow} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
+              </motion.p>
+              <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                {[
+                  { icon: "🎙️", label: "Enregistrement" },
+                  { icon: "🎛️", label: "Mix Panel" },
+                  { icon: "📁", label: "FL Studio" },
+                ].map(f => (
+                  <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
+                    <span className="text-sm">{f.icon}</span>
+                    <span className="text-[11px] font-semibold">{f.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+              <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-puchk-orange text-white font-black text-base rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2 animate-pulse-glow">
+                  Ouvrir Puchk Tool <ArrowRight className="w-5 h-5" />
+                </a>
+                <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-4 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
+                  En savoir plus
+                </a>
+              </motion.div>
+            </div>
           </motion.div>
         );
 
       case "kit":
         return (
           <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 h-full justify-center" key="slide-kit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <div className="flex-1 max-w-xl">
+            <div className="flex-1 max-w-xl bg-black/30 backdrop-blur-sm rounded-2xl p-6">
               <motion.h1
                 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
+                style={titleShadow}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
@@ -412,7 +231,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                   </motion.span>
                 ))}
               </motion.h1>
-              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" style={subtitleShadow} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                 Les meilleurs drum kits du game.
               </motion.p>
               <motion.div className="flex gap-3 mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
@@ -430,10 +249,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                   { value: 25000, label: "ventes", suffix: "+" },
                 ].map((s) => (
                   <div key={s.label}>
-                    <div className="text-3xl font-black tracking-tight">
+                    <div className="text-3xl font-black tracking-tight" style={titleShadow}>
                       <AnimCounter target={s.value} suffix={s.suffix} />
                     </div>
-                    <div className="text-xs text-secondary-puchk mt-1">{s.label}</div>
+                    <div className="text-xs text-secondary-puchk mt-1" style={subtitleShadow}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -469,28 +288,30 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "producers":
         return (
           <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Users className="w-8 h-8 text-puchk-orange" />
-            </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
-            </motion.h2>
-            <motion.p className="text-base text-secondary-puchk mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Publie tes kits, définis tes prix, garde 85% de chaque vente.
-            </motion.p>
-            <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
-                <div key={s.l} className="text-center">
-                  <div className="text-3xl font-black text-puchk-orange">{s.v}</div>
-                  <div className="text-xs text-secondary-puchk uppercase tracking-wider mt-1">{s.l}</div>
-                </div>
-              ))}
-            </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
-                Commencer à vendre <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6">
+              <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+                <Users className="w-8 h-8 text-puchk-orange" />
+              </motion.div>
+              <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" style={titleShadow} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
+              </motion.h2>
+              <motion.p className="text-base text-secondary-puchk mb-10" style={subtitleShadow} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                Publie tes kits, définis tes prix, garde 85% de chaque vente.
+              </motion.p>
+              <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
+                  <div key={s.l} className="text-center">
+                    <div className="text-3xl font-black text-puchk-orange" style={titleShadow}>{s.v}</div>
+                    <div className="text-xs text-secondary-puchk uppercase tracking-wider mt-1" style={subtitleShadow}>{s.l}</div>
+                  </div>
+                ))}
+              </motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
+                  Commencer à vendre <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+            </div>
           </motion.div>
         );
 
@@ -500,15 +321,15 @@ const HomePage = ({ onPlay }: HomePageProps) => {
             <motion.div className="flex-1 max-w-lg rounded-2xl overflow-hidden" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
               <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
             </motion.div>
-            <motion.div className="flex-1 max-w-md" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+            <motion.div className="flex-1 max-w-md bg-black/30 backdrop-blur-sm rounded-2xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3">{promoKit.name}</h2>
-              <p className="text-secondary-puchk mb-2">par <span className="text-puchk-orange">{promoKit.producer}</span></p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={titleShadow}>{promoKit.name}</h2>
+              <p className="text-secondary-puchk mb-2" style={subtitleShadow}>par <span className="text-puchk-orange">{promoKit.producer}</span></p>
               <div className="flex items-center gap-2 mb-6">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm text-secondary-puchk">{promoKit.rating} · {promoKit.sales.toLocaleString()} ventes</span>
+                <span className="text-sm text-secondary-puchk" style={subtitleShadow}>{promoKit.rating} · {promoKit.sales.toLocaleString()} ventes</span>
               </div>
-              <div className="text-4xl font-black text-puchk-orange mb-6">{promoKit.price}€</div>
+              <div className="text-4xl font-black text-puchk-orange mb-6" style={titleShadow}>{promoKit.price}€</div>
               <Link to={`/kit/${promoKit.id}`} className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
                 Découvrir <ArrowRight className="w-4 h-4" />
               </Link>
@@ -528,8 +349,8 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
       >
-        {/* Constellation canvas background */}
-        <ConstellationCanvas mousePos={mousePos} />
+        {/* Flow field canvas background */}
+        <FlowFieldCanvas mousePos={mousePos} />
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1] pointer-events-none" />
@@ -552,12 +373,13 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronLeft className="w-4 h-4 text-white/60" />
           </button>
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-8 h-2.5" : "bg-white/20 w-2.5 h-2.5 hover:bg-white/40"}`}
+                className={`rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-10 h-[10px]" : "bg-white/20 w-[10px] h-[10px] hover:bg-white/40"}`}
+                style={i === currentSlide ? { boxShadow: "0 0 10px rgba(255,107,26,0.4)" } : {}}
               />
             ))}
           </div>
