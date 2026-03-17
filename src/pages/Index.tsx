@@ -657,19 +657,27 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <h2 className="text-4xl font-black tracking-tight mt-1 mb-10">Staff Picks</h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <ScrollReveal className="lg:col-span-3">
-            <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group">
-              <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02]">
-                <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="16/9" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Featured large card */}
+          <ScrollReveal>
+            <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group h-full min-h-[400px]">
+              <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+                <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="1/1" />
               </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute top-4 left-4 z-[5] px-2.5 py-1 rounded-full bg-yellow-500/15 backdrop-blur-xl border border-yellow-500/15">
                 <span className="text-[10px] font-bold tracking-widest uppercase text-yellow-400">Staff Pick</span>
               </div>
-              <div className="absolute bottom-6 left-6 z-[5]">
+              <div className="absolute bottom-6 left-6 right-6 z-[5]">
                 <h3 className="text-3xl font-black tracking-tight text-white drop-shadow-lg">{staffPicks[0].name}</h3>
-                <p className="text-sm text-white/60">{staffPicks[0].producer}</p>
-                <span className="text-xl font-black text-puchk-orange mt-2 inline-block">{staffPicks[0].price}€</span>
+                <p className="text-sm text-white/60 mt-1">{staffPicks[0].producer}</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xl font-black text-puchk-orange">{staffPicks[0].price}€</span>
+                  <div className="flex items-center gap-1.5">
+                    <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                    <span className="text-xs text-white/60">{staffPicks[0].rating}</span>
+                  </div>
+                </div>
               </div>
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-[5]">
                 <button onClick={(e) => { e.preventDefault(); onPlay(staffPicks[0]); }} className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center btn-press">
@@ -679,9 +687,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
             </Link>
           </ScrollReveal>
 
-          <div className="lg:col-span-2 flex flex-col gap-5">
-            {staffPicks.slice(1).map((kit, i) => (
-              <ScrollReveal key={kit.id} delay={0.1 + i * 0.1}>
+          {/* 2x2 grid of smaller picks */}
+          <div className="grid grid-cols-2 gap-4">
+            {staffPicks.slice(1, 5).map((kit, i) => (
+              <ScrollReveal key={kit.id} delay={0.08 + i * 0.08}>
                 <ProductCard kit={kit} onPlay={onPlay} index={i} />
               </ScrollReveal>
             ))}
