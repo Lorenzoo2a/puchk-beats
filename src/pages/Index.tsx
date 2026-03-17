@@ -321,15 +321,15 @@ const HomePage = ({ onPlay }: HomePageProps) => {
             <motion.div className="flex-1 max-w-lg rounded-2xl overflow-hidden" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
               <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
             </motion.div>
-            <motion.div className="flex-1 max-w-md" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+            <motion.div className="flex-1 max-w-md bg-black/30 backdrop-blur-sm rounded-2xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3">{promoKit.name}</h2>
-              <p className="text-secondary-puchk mb-2">par <span className="text-puchk-orange">{promoKit.producer}</span></p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={titleShadow}>{promoKit.name}</h2>
+              <p className="text-secondary-puchk mb-2" style={subtitleShadow}>par <span className="text-puchk-orange">{promoKit.producer}</span></p>
               <div className="flex items-center gap-2 mb-6">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm text-secondary-puchk">{promoKit.rating} · {promoKit.sales.toLocaleString()} ventes</span>
+                <span className="text-sm text-secondary-puchk" style={subtitleShadow}>{promoKit.rating} · {promoKit.sales.toLocaleString()} ventes</span>
               </div>
-              <div className="text-4xl font-black text-puchk-orange mb-6">{promoKit.price}€</div>
+              <div className="text-4xl font-black text-puchk-orange mb-6" style={titleShadow}>{promoKit.price}€</div>
               <Link to={`/kit/${promoKit.id}`} className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
                 Découvrir <ArrowRight className="w-4 h-4" />
               </Link>
