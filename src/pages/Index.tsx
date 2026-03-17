@@ -300,33 +300,19 @@ const heroSlides = [
   { id: "promo", type: "promo" as const },
 ];
 
-/* ── Sequential Glow Hook ── */
-const useSequentialGlow = (count: number, isHovering: boolean) => {
-  const [glowIndex, setGlowIndex] = useState(0);
-  const [active, setActive] = useState(true);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (isHovering) {
-      setActive(false);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      return;
-    }
-    // Resume after 2s of no hover
-    timeoutRef.current = setTimeout(() => setActive(true), 2000);
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [isHovering]);
-
-  useEffect(() => {
-    if (!active || count === 0) return;
-    const interval = setInterval(() => {
-      setGlowIndex(prev => (prev + 1) % count);
-    }, 2300); // 1.5s visible + 0.8s transition
-    return () => clearInterval(interval);
-  }, [active, count]);
-
-  return active ? glowIndex : -1;
-};
+/* ── Glow wrapper component ── */
+const GlowCard = ({ children, isGlowing, className = "" }: { children: React.ReactNode; isGlowing: boolean; className?: string }) => (
+  <div
+    className={`relative z-[1] hover:z-50 ${className}`}
+    style={{
+      boxShadow: isGlowing ? "0 0 25px rgba(255,107,26,0.12), 0 0 8px rgba(255,107,26,0.06)" : "none",
+      borderRadius: "1rem",
+      transition: "box-shadow 600ms ease",
+    }}
+  >
+    {children}
+  </div>
+);
 
 const HomePage = ({ onPlay }: HomePageProps) => {
   const weekKit = kits[0];
