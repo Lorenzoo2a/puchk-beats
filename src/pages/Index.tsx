@@ -188,20 +188,20 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               </motion.p>
               <motion.div className="flex flex-wrap justify-center gap-2 mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                 {[
-                  { icon: "🎙️", label: "Record" },
-                  { icon: "🎛️", label: "Mix" },
-                  { icon: "📁", label: "FL Studio ready" },
-                  { icon: "📦", label: "Export ZIP" },
+                  { Icon: Mic, label: "Record" },
+                  { Icon: SlidersHorizontal, label: "Mix" },
+                  { Icon: FolderOpen, label: "FL Studio ready" },
+                  { Icon: Package, label: "Export ZIP" },
                 ].map(f => (
                   <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
-                    <span className="text-sm">{f.icon}</span>
+                    <f.Icon className="w-3.5 h-3.5 text-puchk-orange" />
                     <span className="text-[11px] font-semibold">{f.label}</span>
                   </div>
                 ))}
               </motion.div>
               <motion.div className="flex justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                 <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-12 py-4 bg-puchk-orange text-white font-black text-lg rounded-xl btn-orange-glow btn-press inline-flex items-center gap-3 animate-pulse-glow shadow-[0_0_30px_rgba(255,107,26,0.3)]">
-                  Lancer Puchk Tool <ArrowRight className="w-5 h-5" />
+                  Tester Puchk Tool <ArrowRight className="w-5 h-5" />
                 </a>
               </motion.div>
             </div>
