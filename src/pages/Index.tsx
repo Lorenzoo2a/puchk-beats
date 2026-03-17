@@ -288,28 +288,30 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "producers":
         return (
           <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Users className="w-8 h-8 text-puchk-orange" />
-            </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
-            </motion.h2>
-            <motion.p className="text-base text-secondary-puchk mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Publie tes kits, définis tes prix, garde 85% de chaque vente.
-            </motion.p>
-            <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-              {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
-                <div key={s.l} className="text-center">
-                  <div className="text-3xl font-black text-puchk-orange">{s.v}</div>
-                  <div className="text-xs text-secondary-puchk uppercase tracking-wider mt-1">{s.l}</div>
-                </div>
-              ))}
-            </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
-                Commencer à vendre <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-6">
+              <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+                <Users className="w-8 h-8 text-puchk-orange" />
+              </motion.div>
+              <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" style={titleShadow} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
+              </motion.h2>
+              <motion.p className="text-base text-secondary-puchk mb-10" style={subtitleShadow} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                Publie tes kits, définis tes prix, garde 85% de chaque vente.
+              </motion.p>
+              <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
+                  <div key={s.l} className="text-center">
+                    <div className="text-3xl font-black text-puchk-orange" style={titleShadow}>{s.v}</div>
+                    <div className="text-xs text-secondary-puchk uppercase tracking-wider mt-1" style={subtitleShadow}>{s.l}</div>
+                  </div>
+                ))}
+              </motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
+                  Commencer à vendre <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+            </div>
           </motion.div>
         );
 
