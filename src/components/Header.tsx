@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bell, ShoppingBag, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { Search, Bell, ShoppingBag, ChevronDown, Sun, Moon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useView, ViewMode } from "@/contexts/ViewContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const navByView: Record<ViewMode, { label: string; path: string }[]> = {
   buyer: [
@@ -34,13 +35,19 @@ const viewLabels: { key: ViewMode; emoji: string; label: string }[] = [
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const { view, setView } = useView();
+  const { theme, toggleTheme } = useTheme();
   const navLinks = navByView[view];
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 50);
+      setScrollProgress(Math.min(y / 200, 1));
+    };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -50,13 +57,17 @@ const Header = () => {
     return location.pathname.startsWith(path);
   };
 
+  const headerBg = scrollProgress > 0
+    ? `rgba(13,13,13,${0.5 + scrollProgress * 0.4})`
+    : "transparent";
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 transition-all duration-300 border-b ${
-        scrolled
-          ? "bg-[#0D0D0D]/90 backdrop-blur-xl border-[rgba(255,107,26,0.12)]"
-          : "bg-transparent border-transparent"
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 transition-all duration-300 border-b backdrop-blur-xl"
+      style={{
+        backgroundColor: headerBg,
+        borderBottomColor: scrolled ? "rgba(255,107,26,0.12)" : "transparent",
+      }}
     >
       <Link to="/" className="flex items-center gap-2.5 mr-8">
         <div className="w-9 h-9 rounded-lg bg-puchk-orange flex items-center justify-center shadow-[0_0_15px_rgba(255,107,26,0.4)]">
@@ -78,20 +89,33 @@ const Header = () => {
           >
             {link.label}
             {isActive(link.path) && (
-              <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-puchk-orange rounded-full" />
+              <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-puchk-orange rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
             )}
           </Link>
         ))}
       </nav>
 
       <div className="ml-auto flex items-center gap-3">
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl hover:bg-white/5 spring-transition btn-press"
+          title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+        >
+          {theme === "dark" ? (
+            <Sun className="w-5 h-5 text-white/60" />
+          ) : (
+            <Moon className="w-5 h-5 text-white/60" />
+          )}
+        </button>
+
         {/* View Switcher */}
         <div className="hidden md:flex items-center gap-0.5 bg-white/5 rounded-xl p-0.5">
           {viewLabels.map((v) => (
             <button
               key={v.key}
               onClick={() => setView(v.key)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold spring-transition ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold spring-transition btn-press ${
                 view === v.key
                   ? "bg-puchk-orange text-white"
                   : "text-white/40 hover:text-white/70"
@@ -111,9 +135,7 @@ const Header = () => {
         </button>
         <Link to="/cart" className="relative p-2 rounded-xl hover:bg-white/5 spring-transition">
           <ShoppingBag className="w-5 h-5 text-white/60" />
-          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-puchk-orange text-[9px] font-bold text-white flex items-center justify-center">
-            2
-          </div>
+          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-puchk-orange text-[9px] font-bold text-white flex items-center justify-center">2</div>
         </Link>
 
         <div className="relative">
@@ -124,25 +146,33 @@ const Header = () => {
             <ChevronDown className="w-3.5 h-3.5 text-white/40" />
           </button>
 
-          {menuOpen && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="absolute right-0 top-12 w-56 glass rounded-xl p-2 shadow-xl">
-              <div className="px-3 py-2 border-b border-white/5 mb-1">
-                <p className="text-sm font-bold text-white">KXZMA</p>
-                <p className="text-[11px] text-white/40">kxzma@puchk.io</p>
-              </div>
-              <Link to="/dashboard" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-              <Link to="/library" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Mon Compte</Link>
-              <Link to="/marketplace" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Marketplace</Link>
-              {view === "admin" && (
-                <Link to="/admin" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Admin Panel</Link>
-              )}
-              <div className="border-t border-white/5 mt-1 pt-1">
-                <Link to="/auth/login" className="w-full text-left block px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>
-                  Déconnexion
-                </Link>
-              </div>
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="absolute right-0 top-12 w-56 glass rounded-xl p-2 shadow-xl"
+              >
+                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                  <p className="text-sm font-bold text-white">KXZMA</p>
+                  <p className="text-[11px] text-white/40">kxzma@puchk.io</p>
+                </div>
+                <Link to="/dashboard" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+                <Link to="/library" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Mon Compte</Link>
+                <Link to="/marketplace" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Marketplace</Link>
+                {view === "admin" && (
+                  <Link to="/admin" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Admin Panel</Link>
+                )}
+                <div className="border-t border-white/5 mt-1 pt-1">
+                  <Link to="/auth/login" className="w-full text-left block px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>
+                    Déconnexion
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

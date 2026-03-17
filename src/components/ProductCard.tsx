@@ -15,9 +15,9 @@ const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
 
   return (
     <motion.div
-      whileHover={{ y: -6 }}
+      whileHover={{ y: -6, boxShadow: "0 4px 6px rgba(0,0,0,0.3), 0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(255,107,26,0.2)" }}
       transition={{ type: "spring", stiffness: 300, damping: 15 }}
-      className="group relative bg-puchk-surface rounded-2xl overflow-hidden border border-[rgba(255,107,26,0.08)] hover:border-[rgba(255,107,26,0.3)] spring-transition puchk-shadow"
+      className="group relative bg-[var(--bg-surface)] rounded-2xl overflow-hidden border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] spring-transition puchk-shadow"
     >
       {/* Cover */}
       <Link to={`/kit/${kit.id}`} className="block relative">
@@ -29,7 +29,7 @@ const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={(e) => { e.preventDefault(); onPlay?.(kit); }}
-            className="w-14 h-14 rounded-full bg-puchk-orange flex items-center justify-center shadow-[0_0_20px_rgba(255,107,26,0.5)]"
+            className="w-14 h-14 rounded-full bg-puchk-orange flex items-center justify-center shadow-[0_0_20px_rgba(255,107,26,0.5)] btn-press"
           >
             <Play className="w-6 h-6 text-white fill-white ml-0.5" />
           </motion.button>
@@ -38,7 +38,7 @@ const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
         {/* Favorite */}
         <button
           onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
-          className="absolute top-3 right-3 z-[5] p-1.5 rounded-full bg-black/30 backdrop-blur-sm spring-transition hover:bg-black/50"
+          className="absolute top-3 right-3 z-[5] p-1.5 rounded-full bg-black/30 backdrop-blur-sm spring-transition hover:bg-black/50 btn-press"
         >
           <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : "text-white/70"}`} />
         </button>
@@ -53,7 +53,7 @@ const ProductCard = ({ kit, onPlay }: ProductCardProps) => {
             <span className="text-[10px] text-secondary-puchk">{kit.rating} ({kit.reviews})</span>
           </div>
         </div>
-        <button className="p-3 rounded-xl bg-white/5 hover:bg-puchk-orange spring-transition group/btn">
+        <button className="p-3 rounded-xl bg-white/5 hover:bg-puchk-orange spring-transition group/btn btn-press">
           <ShoppingBag className="w-5 h-5 group-hover/btn:text-white text-white/70 spring-transition" />
         </button>
       </div>
