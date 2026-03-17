@@ -111,6 +111,8 @@ const AppContent = () => {
               <Route path="sales" element={<SellerSalesPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="promos" element={<PromosPage />} />
+              <Route path="promote" element={<PromotePage />} />
+              <Route path="ecards" element={<ECardPage />} />
               <Route path="profile" element={<SellerProfilePage />} />
             </Route>
 
