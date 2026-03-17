@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, SlidersHorizontal, Star, X } from "lucide-react";
 import { kits, genreLabels, Genre, Kit } from "@/data/mockData";
 import ProductCard from "@/components/ProductCard";
+import { useSequentialGlow } from "@/hooks/useSequentialGlow";
 
 interface MarketplacePageProps {
   onPlay: (kit: Kit) => void;
