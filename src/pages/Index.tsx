@@ -314,7 +314,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
   const weekKit = kits[0];
   const promoKit = kits[10];
   const hotKits = [...kits].sort((a, b) => b.sales - a.sales).slice(0, 8);
-  const staffPicks = [kits[0], kits[2], kits[8]];
+  const staffPicks = [kits[0], kits[2], kits[8], kits[4], kits[6]];
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [hoveringHero, setHoveringHero] = useState(false);
