@@ -374,25 +374,24 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "tool":
         return (
           <motion.div className="relative z-[2] max-w-5xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <motion.div className="w-20 h-20 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
-              <Wrench className="w-10 h-10 text-puchk-orange" />
+            <motion.div className="w-14 h-14 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+              <Wrench className="w-7 h-7 text-puchk-orange" />
             </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <motion.h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               Crée ton drumkit de A à Z
             </motion.h2>
-            <motion.p className="text-sm sm:text-base text-secondary-puchk max-w-2xl mx-auto mb-8 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              Puchk Tool est un studio de création de drumkits dans le navigateur. Enregistre tes propres sons avec ton micro, importe tes samples, organise-les en dossiers, mixe et ajuste chaque son dans le Mix Panel intégré, personnalise les icônes FL Studio, et exporte un kit ZIP prêt à vendre.
+            <motion.p className="text-xs sm:text-sm text-secondary-puchk max-w-xl mx-auto mb-5 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+              Enregistre tes sons, importe tes samples, mixe dans le Mix Panel intégré, personnalise pour FL Studio, et exporte un kit ZIP prêt à vendre.
             </motion.p>
-            {/* Feature mini cards */}
-            <motion.div className="flex flex-wrap justify-center gap-3 mb-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <motion.div className="flex flex-wrap justify-center gap-2 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
               {[
-                { icon: "🎙️", label: "Enregistrement micro" },
+                { icon: "🎙️", label: "Enregistrement" },
                 { icon: "🎛️", label: "Mix Panel" },
-                { icon: "📁", label: "Organisation FL Studio" },
+                { icon: "📁", label: "FL Studio" },
               ].map(f => (
-                <div key={f.label} className="liquid-glass rounded-xl px-4 py-3 flex items-center gap-2">
-                  <span className="text-lg">{f.icon}</span>
-                  <span className="text-xs font-semibold">{f.label}</span>
+                <div key={f.label} className="liquid-glass rounded-lg px-3 py-2 flex items-center gap-1.5">
+                  <span className="text-sm">{f.icon}</span>
+                  <span className="text-[11px] font-semibold">{f.label}</span>
                 </div>
               ))}
             </motion.div>
