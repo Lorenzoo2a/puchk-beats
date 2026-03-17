@@ -286,7 +286,7 @@ const heroSlides = [
 const useSequentialGlow = (count: number, isHovering: boolean) => {
   const [glowIndex, setGlowIndex] = useState(0);
   const [active, setActive] = useState(true);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isHovering) {
