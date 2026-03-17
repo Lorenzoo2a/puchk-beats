@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Star, Play, Pause, Folder, FileAudio, Users, Quote, Wrench, Mic, SlidersHorizontal } from "lucide-react";
 import { kits, producers, trendingTags, Kit } from "@/data/mockData";
 import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
@@ -35,128 +35,176 @@ const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-/* ── EQ Particles (equalizer bar style) ── */
-const EQParticles = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
-  const particles = useMemo(() =>
-    [...Array(14)].map((_, i) => ({
-      left: 5 + Math.random() * 90,
-      top: 10 + Math.random() * 80,
-      barCount: 2 + Math.floor(Math.random() * 3),
-      duration: 8 + Math.random() * 12,
-      delay: Math.random() * 6,
-      rotation: -15 + Math.random() * 30,
-    })), []
-  );
+/* ── Constellation Canvas Background ── */
+const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Array<{
+    x: number; y: number; vx: number; vy: number; baseX: number; baseY: number; size: number; opacity: number;
+  }>>([]);
+  const haloRef = useRef({ x: 0.5, y: 0.5 });
+  const mousePosRef = useRef(mousePos);
+  const animFrameRef = useRef<number>(0);
 
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
-      {particles.map((p, i) => {
-        let dx = 0, dy = 0;
-        if (mousePos) {
-          const px = p.left / 100;
-          const py = p.top / 100;
-          const dist = Math.sqrt((mousePos.x - px) ** 2 + (mousePos.y - py) ** 2);
-          if (dist < 0.2) {
-            const force = (0.2 - dist) * 80;
-            dx = (px - mousePos.x) * force;
-            dy = (py - mousePos.y) * force;
-          }
-        }
-        return (
-          <div
-            key={i}
-            className="absolute flex items-end gap-[1px]"
-            style={{
-              left: `${p.left}%`,
-              top: `${p.top}%`,
-              transform: `rotate(${p.rotation}deg) translate(${dx}px, ${dy}px)`,
-              transition: "transform 400ms ease-out",
-              animation: `float ${p.duration}s ease-in-out ${p.delay}s infinite`,
-            }}
-          >
-            {[...Array(p.barCount)].map((_, j) => (
-              <div
-                key={j}
-                className="w-[2px] rounded-full bg-puchk-orange/15"
-                style={{
-                  animation: `eq-bar ${0.6 + Math.random() * 1.2}s ease-in-out ${j * 0.15}s infinite`,
-                }}
-              />
-            ))}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+  mousePosRef.current = mousePos;
 
-/* ── Audio Visualizer Background (mouse-reactive waveform mesh) ── */
-const AudioVisualizer = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
-  const lineCount = 9;
-  const lines = useMemo(() =>
-    [...Array(lineCount)].map((_, i) => ({
-      yBase: (i + 1) / (lineCount + 1),
-      opacity: 0.04 + (1 - Math.abs(i - lineCount / 2) / (lineCount / 2)) * 0.08,
-      freq: 1 + Math.random() * 2,
-      speed: 6 + Math.random() * 8,
-      phase: Math.random() * Math.PI * 2,
-      amplitude: 15 + Math.random() * 15,
-    })), []
-  );
-
-  const [time, setTime] = useState(0);
   useEffect(() => {
-    let frame: number;
-    const animate = () => {
-      setTime(t => t + 0.008);
-      frame = requestAnimationFrame(animate);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (rect) {
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
     };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, []);
+    resize();
+    window.addEventListener("resize", resize);
 
-  const generatePath = useCallback((line: typeof lines[0], t: number) => {
-    const points = 80;
-    let d = "";
-    for (let j = 0; j <= points; j++) {
-      const x = (j / points) * 1200;
-      const xNorm = j / points;
-      const yCenter = line.yBase * 400;
+    // Init particles
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const count = 70;
+    particlesRef.current = Array.from({ length: count }, () => {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      return {
+        x, y, baseX: x, baseY: y,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        size: 1.5 + Math.random() * 1,
+        opacity: 0.15 + Math.random() * 0.1,
+      };
+    });
 
-      let amp = line.amplitude;
-      if (mousePos) {
-        const dist = Math.abs(mousePos.y - line.yBase);
-        if (dist < 0.15) {
-          amp *= 1 + (0.15 - dist) / 0.15 * 0.6;
-        }
-        const xDist = Math.abs(mousePos.x - xNorm);
-        if (xDist < 0.15) {
-          amp *= 1 + (0.15 - xDist) / 0.15 * 0.4;
+    const CONNECTION_DIST = 150;
+    const MOUSE_RADIUS = 120;
+
+    const animate = () => {
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      ctx.clearRect(0, 0, cw, ch);
+
+      const mp = mousePosRef.current;
+      const mx = mp ? mp.x * cw : -9999;
+      const my = mp ? mp.y * ch : -9999;
+
+      // Lerp halo toward mouse
+      if (mp) {
+        haloRef.current.x += (mp.x - haloRef.current.x) * 0.05;
+        haloRef.current.y += (mp.y - haloRef.current.y) * 0.05;
+      }
+
+      // Draw halo
+      const hx = haloRef.current.x * cw;
+      const hy = haloRef.current.y * ch;
+      const haloGrad = ctx.createRadialGradient(hx, hy, 0, hx, hy, 200);
+      haloGrad.addColorStop(0, "rgba(255,107,26,0.05)");
+      haloGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = haloGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      const particles = particlesRef.current;
+
+      // Update positions
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce
+        if (p.x < 0 || p.x > cw) p.vx *= -1;
+        if (p.y < 0 || p.y > ch) p.vy *= -1;
+        p.x = Math.max(0, Math.min(cw, p.x));
+        p.y = Math.max(0, Math.min(ch, p.y));
+
+        // Mouse attraction
+        if (mp) {
+          const dx = mx - p.x;
+          const dy = my - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS && dist > 0) {
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 0.8;
+            p.x += dx / dist * force;
+            p.y += dy / dist * force;
+          }
         }
       }
 
-      const y = yCenter + Math.sin(xNorm * line.freq * Math.PI * 2 + t * (6 / line.speed) + line.phase) * amp
-                        + Math.sin(xNorm * line.freq * Math.PI * 4 + t * (4 / line.speed)) * amp * 0.3;
+      // Draw connections (spatial grid optimization)
+      const gridSize = CONNECTION_DIST;
+      const grid: Map<string, number[]> = new Map();
+      for (let i = 0; i < particles.length; i++) {
+        const gx = Math.floor(particles[i].x / gridSize);
+        const gy = Math.floor(particles[i].y / gridSize);
+        const key = `${gx},${gy}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key)!.push(i);
+      }
 
-      d += j === 0 ? `M${x},${y}` : ` L${x},${y}`;
-    }
-    return d;
-  }, [mousePos]);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const gx = Math.floor(p.x / gridSize);
+        const gy = Math.floor(p.y / gridSize);
 
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none z-[0]" preserveAspectRatio="none" viewBox="0 0 1200 400">
-      {lines.map((line, i) => (
-        <path
-          key={i}
-          d={generatePath(line, time)}
-          fill="none"
-          stroke={`rgba(255,107,26,${line.opacity})`}
-          strokeWidth="1.5"
-          style={{ transition: "d 400ms ease-out" }}
-        />
-      ))}
-    </svg>
-  );
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const neighbors = grid.get(`${gx + dx},${gy + dy}`);
+            if (!neighbors) continue;
+            for (const j of neighbors) {
+              if (j <= i) continue;
+              const q = particles[j];
+              const ddx = p.x - q.x;
+              const ddy = p.y - q.y;
+              const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+              if (dist < CONNECTION_DIST) {
+                const alpha = (1 - dist / CONNECTION_DIST) * 0.06;
+                // Brighter near mouse
+                let lineAlpha = alpha;
+                if (mp) {
+                  const midX = (p.x + q.x) / 2;
+                  const midY = (p.y + q.y) / 2;
+                  const mouseDist = Math.sqrt((midX - mx) ** 2 + (midY - my) ** 2);
+                  if (mouseDist < MOUSE_RADIUS) {
+                    lineAlpha = alpha + (1 - mouseDist / MOUSE_RADIUS) * 0.15;
+                  }
+                }
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(q.x, q.y);
+                ctx.strokeStyle = `rgba(255,107,26,${lineAlpha})`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+              }
+            }
+          }
+        }
+      }
+
+      // Draw particles
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,107,26,${p.opacity})`;
+        ctx.fill();
+      }
+
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-[0]" />;
 };
 
 /* ── Scroll reveal wrapper ── */
@@ -226,13 +274,41 @@ const testimonials = [
   { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", emoji: "✨" },
 ];
 
-/* ── Hero slides config ── */
+/* ── Hero slides config — Puchk Tool first ── */
 const heroSlides = [
-  { id: "kit-week", type: "kit" as const },
   { id: "puchk-tool", type: "tool" as const },
+  { id: "kit-week", type: "kit" as const },
   { id: "producers", type: "producers" as const },
   { id: "promo", type: "promo" as const },
 ];
+
+/* ── Sequential Glow Hook ── */
+const useSequentialGlow = (count: number, isHovering: boolean) => {
+  const [glowIndex, setGlowIndex] = useState(0);
+  const [active, setActive] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (isHovering) {
+      setActive(false);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      return;
+    }
+    // Resume after 2s of no hover
+    timeoutRef.current = setTimeout(() => setActive(true), 2000);
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [isHovering]);
+
+  useEffect(() => {
+    if (!active || count === 0) return;
+    const interval = setInterval(() => {
+      setGlowIndex(prev => (prev + 1) % count);
+    }, 2300); // 1.5s visible + 0.8s transition
+    return () => clearInterval(interval);
+  }, [active, count]);
+
+  return active ? glowIndex : -1;
+};
 
 const HomePage = ({ onPlay }: HomePageProps) => {
   const weekKit = kits[0];
@@ -246,14 +322,19 @@ const HomePage = ({ onPlay }: HomePageProps) => {
   const heroRef = useRef<HTMLElement>(null);
 
   // Hot kits carousel state
-  const hotScrollRef = useRef<HTMLDivElement>(null);
   const [hotPage, setHotPage] = useState(0);
-  const hotCardsPerPage = 4; // desktop shows 4
+  const [hotHovering, setHotHovering] = useState(false);
+  const hotCardsPerPage = 4;
   const hotTotalPages = Math.ceil(hotKits.length / hotCardsPerPage);
+
+  const glowIndex = useSequentialGlow(
+    Math.min(hotCardsPerPage, hotKits.length - hotPage * hotCardsPerPage),
+    hotHovering
+  );
 
   useEffect(() => {
     if (hoveringHero) return;
-    const timer = setInterval(() => setCurrentSlide((c) => (c + 1) % heroSlides.length), 6000);
+    const timer = setInterval(() => setCurrentSlide((c) => (c + 1) % heroSlides.length), 5000);
     return () => clearInterval(timer);
   }, [hoveringHero]);
 
@@ -271,21 +352,47 @@ const HomePage = ({ onPlay }: HomePageProps) => {
     setMousePos(null);
   }, []);
 
-  const scrollHotKits = (dir: number) => {
-    const next = Math.max(0, Math.min(hotTotalPages - 1, hotPage + dir));
-    setHotPage(next);
-    if (hotScrollRef.current) {
-      const cardWidth = hotScrollRef.current.scrollWidth / hotKits.length;
-      hotScrollRef.current.scrollTo({ left: next * hotCardsPerPage * cardWidth, behavior: "smooth" });
-    }
-  };
-
   const renderSlide = (slideIndex: number) => {
     switch (heroSlides[slideIndex].type) {
+      case "tool":
+        return (
+          <motion.div className="relative z-[2] max-w-5xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
+            <motion.div className="w-20 h-20 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
+              <Wrench className="w-10 h-10 text-puchk-orange" />
+            </motion.div>
+            <motion.h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              Crée ton drumkit de A à Z
+            </motion.h2>
+            <motion.p className="text-sm sm:text-base text-secondary-puchk max-w-2xl mx-auto mb-8 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+              Puchk Tool est un studio de création de drumkits dans le navigateur. Enregistre tes propres sons avec ton micro, importe tes samples, organise-les en dossiers, mixe et ajuste chaque son dans le Mix Panel intégré, personnalise les icônes FL Studio, et exporte un kit ZIP prêt à vendre.
+            </motion.p>
+            {/* Feature mini cards */}
+            <motion.div className="flex flex-wrap justify-center gap-3 mb-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+              {[
+                { icon: "🎙️", label: "Enregistrement micro" },
+                { icon: "🎛️", label: "Mix Panel" },
+                { icon: "📁", label: "Organisation FL Studio" },
+              ].map(f => (
+                <div key={f.label} className="liquid-glass rounded-xl px-4 py-3 flex items-center gap-2">
+                  <span className="text-lg">{f.icon}</span>
+                  <span className="text-xs font-semibold">{f.label}</span>
+                </div>
+              ))}
+            </motion.div>
+            <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-puchk-orange text-white font-black text-base rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2 animate-pulse-glow">
+                Ouvrir Puchk Tool <ArrowRight className="w-5 h-5" />
+              </a>
+              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-4 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
+                En savoir plus
+              </a>
+            </motion.div>
+          </motion.div>
+        );
+
       case "kit":
         return (
-          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-16 py-20" key="slide-kit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            {/* Left */}
+          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 h-full justify-center" key="slide-kit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
             <div className="flex-1 max-w-xl">
               <motion.h1
                 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
@@ -297,17 +404,17 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                     key={i}
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: i * 0.06, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="inline-block"
                   >
                     {letter}
                   </motion.span>
                 ))}
               </motion.h1>
-              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                 Les meilleurs drum kits du game.
               </motion.p>
-              <motion.div className="flex gap-3 mb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+              <motion.div className="flex gap-3 mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
                 <Link to="/marketplace" className="px-6 py-3 bg-puchk-orange text-white font-semibold text-sm rounded-xl btn-orange-glow btn-press">
                   Explorer la marketplace →
                 </Link>
@@ -330,8 +437,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 ))}
               </div>
             </div>
-            {/* Right - Kit card */}
-            <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, type: "spring" }}>
+            <motion.div className="w-full max-w-sm rounded-2xl overflow-hidden animate-border-glow liquid-glass puchk-shadow" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, type: "spring" }}>
               <div className="p-5">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-yellow-400 mb-4 flex items-center gap-1.5">
                   <Star className="w-3 h-3 fill-yellow-400" /> KIT DE LA SEMAINE
@@ -359,54 +465,19 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           </motion.div>
         );
 
-      case "tool":
-        return (
-          <motion.div className="relative z-[2] max-w-4xl mx-auto px-6 w-full text-center py-20" key="slide-tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}>
-              <Wrench className="w-8 h-8 text-puchk-orange" />
-            </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              Crée ton drumkit de A à Z
-            </motion.h2>
-            <motion.p className="text-base text-secondary-puchk max-w-2xl mx-auto mb-8 leading-relaxed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-              Puchk Tool est un outil de création de drumkits dans le navigateur. Importe tes sons, organise-les en dossiers (Kicks, Snares, Hi-Hats, 808...), personnalise les icônes et couleurs pour FL Studio, et exporte un kit ZIP prêt à vendre sur la marketplace.
-            </motion.p>
-            {/* File tree visual */}
-            <motion.div className="liquid-glass rounded-2xl p-5 max-w-xs mx-auto mb-8 text-left" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-puchk-orange font-semibold"><Folder className="w-3.5 h-3.5" /> My Drum Kit/</div>
-                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-red-400" /> Kicks/</div>
-                <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> kick_hard_01.wav</div>
-                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-blue-400" /> 808s/</div>
-                <div className="ml-8 flex items-center gap-2 text-xs text-secondary-puchk"><FileAudio className="w-3 h-3" /> 808_sub.wav</div>
-                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-yellow-400" /> Hi-Hats/</div>
-                <div className="ml-4 flex items-center gap-2 text-xs text-secondary-puchk"><Folder className="w-3 h-3 text-purple-400" /> Snares/</div>
-              </div>
-            </motion.div>
-            <motion.div className="flex justify-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
-                Ouvrir Puchk Tool <ArrowRight className="w-4 h-4" />
-              </a>
-              <a href="https://tool.puchk.com" target="_blank" rel="noopener noreferrer" className="px-6 py-3.5 liquid-glass font-semibold text-sm rounded-xl hover:text-puchk-orange transition-all btn-press">
-                En savoir plus
-              </a>
-            </motion.div>
-          </motion.div>
-        );
-
       case "producers":
         return (
-          <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center py-20" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring" }}>
+          <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
+            <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
               <Users className="w-8 h-8 text-puchk-orange" />
             </motion.div>
-            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <motion.h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               Rejoins <span className="text-puchk-orange"><AnimCounter target={850} suffix="+" /></span> producteurs
             </motion.h2>
-            <motion.p className="text-base text-secondary-puchk mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+            <motion.p className="text-base text-secondary-puchk mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
               Publie tes kits, définis tes prix, garde 85% de chaque vente.
             </motion.p>
-            <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <motion.div className="flex justify-center gap-8 mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
               {[{ v: "15%", l: "Commission" }, { v: "85%", l: "Tu gardes" }, { v: "Mensuel", l: "Paiement" }].map((s) => (
                 <div key={s.l} className="text-center">
                   <div className="text-3xl font-black text-puchk-orange">{s.v}</div>
@@ -414,7 +485,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                 </div>
               ))}
             </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
               <Link to="/dashboard" className="px-8 py-3.5 bg-puchk-orange text-white font-bold text-sm rounded-xl btn-orange-glow btn-press inline-flex items-center gap-2">
                 Commencer à vendre <ArrowRight className="w-4 h-4" />
               </Link>
@@ -424,13 +495,11 @@ const HomePage = ({ onPlay }: HomePageProps) => {
 
       case "promo":
         return (
-          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 py-20" key="slide-promo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-            {/* Left - Large cover */}
-            <motion.div className="flex-1 max-w-lg rounded-2xl overflow-hidden" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+          <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 h-full justify-center" key="slide-promo" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
+            <motion.div className="flex-1 max-w-lg rounded-2xl overflow-hidden" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
               <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
             </motion.div>
-            {/* Right - Info */}
-            <motion.div className="flex-1 max-w-md" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+            <motion.div className="flex-1 max-w-md" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3">{promoKit.name}</h2>
               <p className="text-secondary-puchk mb-2">par <span className="text-puchk-orange">{promoKit.producer}</span></p>
@@ -449,20 +518,23 @@ const HomePage = ({ onPlay }: HomePageProps) => {
   };
 
   return (
-    <div className="min-h-screen pt-16">
-      {/* ===== HERO CAROUSEL ===== */}
+    <div className="min-h-screen pt-16 pb-20">
+      {/* ===== HERO CAROUSEL — Fixed height ===== */}
       <section
         ref={heroRef}
-        className="relative min-h-[600px] max-h-[80vh] flex items-center overflow-hidden"
+        className="relative h-[70vh] lg:h-[85vh] flex items-center overflow-hidden"
         onMouseEnter={() => setHoveringHero(true)}
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
       >
-        {/* Background effects */}
-        <AudioVisualizer mousePos={mousePos} />
-        <EQParticles mousePos={mousePos} />
+        {/* Constellation canvas background */}
+        <ConstellationCanvas mousePos={mousePos} />
 
-        {/* Halo lumineux */}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1] pointer-events-none" />
+        <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
+
+        {/* Halo */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-[0]"
           style={{
             background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,26,0.06) 0%, transparent 50%)",
@@ -470,16 +542,13 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           }}
         />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1]" />
-        <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
-
         <AnimatePresence mode="wait">
           {renderSlide(currentSlide)}
         </AnimatePresence>
 
         {/* Carousel controls */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[5] flex items-center gap-3">
-          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+          <button onClick={() => setCurrentSlide((c) => (c - 1 + heroSlides.length) % heroSlides.length)} className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronLeft className="w-4 h-4 text-white/60" />
           </button>
           <div className="flex gap-2">
@@ -487,11 +556,11 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-8" : "bg-white/15 w-1.5 hover:bg-white/30"}`}
+                className={`rounded-full transition-all duration-500 ${i === currentSlide ? "bg-puchk-orange w-8 h-2.5" : "bg-white/20 w-2.5 h-2.5 hover:bg-white/40"}`}
               />
             ))}
           </div>
-          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+          <button onClick={() => setCurrentSlide((c) => (c + 1) % heroSlides.length)} className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
             <ChevronRight className="w-4 h-4 text-white/60" />
           </button>
         </div>
@@ -518,7 +587,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         </section>
       </ScrollReveal>
 
-      {/* ===== HOT THIS WEEK (Fixed carousel) ===== */}
+      {/* ===== HOT THIS WEEK ===== */}
       <section className="max-w-7xl mx-auto px-6 py-28">
         <ScrollReveal>
           <div className="flex items-center justify-between mb-10">
@@ -527,27 +596,39 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <h2 className="text-4xl font-black tracking-tight mt-1">Kits les plus vendus</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => scrollHotKits(-1)} disabled={hotPage === 0} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
+              <button onClick={() => setHotPage(p => Math.max(0, p - 1))} disabled={hotPage === 0} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
                 <ChevronLeft className="w-5 h-5 text-white/50" />
               </button>
-              <button onClick={() => scrollHotKits(1)} disabled={hotPage >= hotTotalPages - 1} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
+              <button onClick={() => setHotPage(p => Math.min(hotTotalPages - 1, p + 1))} disabled={hotPage >= hotTotalPages - 1} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press disabled:opacity-30">
                 <ChevronRight className="w-5 h-5 text-white/50" />
               </button>
             </div>
           </div>
         </ScrollReveal>
 
-        <div ref={hotScrollRef} className="overflow-hidden">
+        <div
+          className="overflow-visible"
+          onMouseEnter={() => setHotHovering(true)}
+          onMouseLeave={() => setHotHovering(false)}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {hotKits.slice(hotPage * hotCardsPerPage, (hotPage + 1) * hotCardsPerPage).map((kit, i) => (
-              <ScrollReveal key={kit.id} delay={i * 0.08}>
-                <ProductCard kit={kit} onPlay={onPlay} index={i} />
+              <ScrollReveal key={`${hotPage}-${kit.id}`} delay={i * 0.08}>
+                <div
+                  className="relative z-[1] hover:z-50 transition-all duration-800"
+                  style={{
+                    boxShadow: glowIndex === i ? "0 0 25px rgba(255,107,26,0.12)" : "none",
+                    borderRadius: "1rem",
+                    transition: "box-shadow 800ms ease",
+                  }}
+                >
+                  <ProductCard kit={kit} onPlay={onPlay} index={i} />
+                </div>
               </ScrollReveal>
             ))}
           </div>
         </div>
 
-        {/* Page dots */}
         <div className="flex justify-center gap-2 mt-6">
           {[...Array(hotTotalPages)].map((_, i) => (
             <button
@@ -579,7 +660,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           <ScrollReveal className="lg:col-span-3">
             <Link to={`/kit/${staffPicks[0].id}`} className="block relative rounded-2xl overflow-hidden group">
-              <div className="transition-transform duration-500 group-hover:scale-[1.02]">
+              <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02]">
                 <KitCover genre={staffPicks[0].genre} title={staffPicks[0].name} producer={staffPicks[0].producer} aspectRatio="16/9" />
               </div>
               <div className="absolute top-4 left-4 z-[5] px-2.5 py-1 rounded-full bg-yellow-500/15 backdrop-blur-xl border border-yellow-500/15">

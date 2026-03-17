@@ -41,6 +41,7 @@ const GlobalPlayer = ({ kit, onClose }: GlobalPlayerProps) => {
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className="fixed bottom-0 left-0 right-0 h-20 liquid-glass-strong z-50 flex items-center px-6 gap-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+      style={{ borderRadius: 0 }}
     >
       {/* Orange reflet on top */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-puchk-orange/10 to-transparent pointer-events-none" />
