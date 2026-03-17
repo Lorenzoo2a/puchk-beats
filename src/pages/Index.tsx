@@ -524,20 +524,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
       >
-        {/* Constellation canvas background */}
-        <ConstellationCanvas mousePos={mousePos} />
+        {/* Liquid metaball background */}
+        <LiquidCanvas mousePos={mousePos} />
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1] pointer-events-none" />
         <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
-
-        {/* Halo */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-[0]"
-          style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,26,0.06) 0%, transparent 50%)",
-            animation: "halo-pulse 6s ease-in-out infinite",
-          }}
-        />
 
         <AnimatePresence mode="wait">
           {renderSlide(currentSlide)}
