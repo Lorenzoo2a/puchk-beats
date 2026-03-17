@@ -115,22 +115,44 @@ const MarketplacePage = ({ onPlay }: MarketplacePageProps) => {
         )}
 
         {/* Grid */}
-        <div className="flex-1">
-          <div className={`grid gap-5 ${showFilters ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
-            {filtered.map((kit, i) => (
-              <div key={kit.id} style={{ animationDelay: `${i * 50}ms` }} className="animate-in fade-in slide-in-from-bottom-4">
-                <ProductCard kit={kit} onPlay={onPlay} />
-              </div>
-            ))}
-          </div>
-          {filtered.length === 0 && (
-            <div className="text-center py-20 text-white/40">
-              <p className="text-lg">Aucun kit trouvé</p>
-              <p className="text-sm mt-1">Essaie d'autres filtres</p>
-            </div>
-          )}
+        <MarketplaceGrid filtered={filtered} onPlay={onPlay} showFilters={showFilters} />
         </div>
       </div>
+    </div>
+  );
+};
+
+const MarketplaceGrid = ({ filtered, onPlay, showFilters }: { filtered: Kit[]; onPlay: (kit: Kit) => void; showFilters: boolean }) => {
+  const glow = useSequentialGlow(Math.min(filtered.length, 12));
+
+  return (
+    <div className="flex-1">
+      <div
+        className={`grid gap-5 ${showFilters ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}
+        onMouseEnter={() => glow.pause()}
+        onMouseLeave={() => glow.resume()}
+      >
+        {filtered.map((kit, i) => (
+          <div key={kit.id} style={{ animationDelay: `${i * 50}ms` }} className="animate-in fade-in slide-in-from-bottom-4">
+            <div
+              className="relative z-[1] hover:z-50"
+              style={{
+                boxShadow: glow.glowIndex === i && i < 12 ? "0 0 25px rgba(255,107,26,0.12), 0 0 8px rgba(255,107,26,0.06)" : "none",
+                borderRadius: "1rem",
+                transition: "box-shadow 600ms ease",
+              }}
+            >
+              <ProductCard kit={kit} onPlay={onPlay} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {filtered.length === 0 && (
+        <div className="text-center py-20 text-white/40">
+          <p className="text-lg">Aucun kit trouvé</p>
+          <p className="text-sm mt-1">Essaie d'autres filtres</p>
+        </div>
+      )}
     </div>
   );
 };
