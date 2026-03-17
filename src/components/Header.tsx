@@ -148,7 +148,7 @@ const Header = () => {
                   : "text-white/40 hover:text-white/70"
               }`}
             >
-              {v.emoji} {v.label}
+              <v.Icon className="w-3 h-3" /> {v.label}
             </button>
           ))}
         </div>
