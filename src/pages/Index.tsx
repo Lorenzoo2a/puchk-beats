@@ -321,7 +321,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               <KitCover genre={promoKit.genre} title={promoKit.name} producer={promoKit.producer} aspectRatio="1/1" />
             </motion.div>
             <motion.div className="flex-1 max-w-md bg-black/30 backdrop-blur-sm rounded-2xl p-6" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1">🆕 NOUVEAU</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-3 flex items-center gap-1"><Sparkles className="w-3 h-3" /> NOUVEAU</div>
               <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={titleShadow}>{promoKit.name}</h2>
               <p className="text-secondary-puchk mb-2" style={subtitleShadow}>par <span className="text-puchk-orange">{promoKit.producer}</span></p>
               <div className="flex items-center gap-2 mb-6">
