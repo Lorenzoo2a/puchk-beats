@@ -569,7 +569,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
           <div className="flex gap-5 animate-marquee hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
             {[...testimonials, ...testimonials].map((t, i) => (
               <div key={i} className="w-[340px] flex-shrink-0 liquid-glass rounded-2xl p-6">
-                <div className="text-2xl mb-3">{t.emoji}</div>
+                <t.icon className="w-5 h-5 text-puchk-orange mb-3" />
                 <p className="text-sm text-white/80 leading-relaxed italic mb-4">"{t.text}"</p>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-puchk-orange/15 flex items-center justify-center text-[10px] font-bold text-puchk-orange">
