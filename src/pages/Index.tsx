@@ -7,6 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import ProducerCard from "@/components/ProducerCard";
 import KitCover from "@/components/KitCover";
 import { Link } from "react-router-dom";
+import FlowFieldCanvas from "@/components/FlowFieldCanvas";
 
 interface HomePageProps {
   onPlay: (kit: Kit) => void;
