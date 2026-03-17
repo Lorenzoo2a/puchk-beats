@@ -344,8 +344,8 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
       >
-        {/* Constellation canvas background */}
-        <ConstellationCanvas mousePos={mousePos} />
+        {/* Flow field canvas background */}
+        <FlowFieldCanvas mousePos={mousePos} />
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1] pointer-events-none" />
