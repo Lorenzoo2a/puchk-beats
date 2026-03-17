@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Star, Play, ShoppingBag, Heart, ArrowRight } from "lucide-react";
+import { Star, Play, ShoppingBag, Heart, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { kits, genreLabels, Kit } from "@/data/mockData";
 import KitCover from "@/components/KitCover";
@@ -24,9 +24,11 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
   const { id } = useParams();
   const kit = kits.find((k) => k.id === id) || kits[0];
   const [selectedLicense, setSelectedLicense] = useState(0);
+  const [liked, setLiked] = useState(false);
   const similarKits = kits.filter((k) => k.id !== kit.id && k.genre === kit.genre).length > 0
     ? kits.filter((k) => k.id !== kit.id && k.genre === kit.genre)
     : kits.filter((k) => k.id !== kit.id).slice(0, 4);
+  const similarScrollRef = useRef<HTMLDivElement>(null);
 
   const contents = kit.contents || [
     { icon: "🥁", name: "Kicks", count: 20 },
@@ -43,7 +45,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
   const producerData = { name: kit.producer, id: kit.producerId };
 
   return (
-    <div className="min-h-screen pt-16 page-enter">
+    <div className="min-h-screen pt-16">
       {/* === HERO COVER — Full width 16:9 === */}
       <div className="relative w-screen -ml-[calc((100vw-100%)/2)]" style={{ left: "calc((100vw - 100%) / 2)" }}>
         <div className="w-full" style={{ aspectRatio: "16/9", maxHeight: "60vh" }}>
@@ -57,7 +59,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onPlay(kit)}
-            className="w-[72px] h-[72px] rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_60px_rgba(255,107,26,0.2)] btn-press"
+            className="w-[72px] h-[72px] rounded-full liquid-glass flex items-center justify-center shadow-[0_0_60px_rgba(255,107,26,0.2)] btn-press border-white/20"
           >
             <Play className="w-8 h-8 text-white fill-white ml-1" />
           </motion.button>
@@ -66,9 +68,17 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
         {/* Title overlay */}
         <div className="absolute bottom-10 left-0 right-0 z-[5]">
           <div className="max-w-6xl mx-auto px-6">
-            <span className="inline-block px-2.5 py-1 rounded-full bg-white/8 backdrop-blur-xl border border-white/8 text-[10px] font-bold tracking-widest uppercase text-white/80 mb-3">
-              {genreLabels[kit.genre]}
-            </span>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="inline-block px-2.5 py-1 rounded-full bg-white/[0.08] backdrop-blur-xl border border-white/[0.08] text-[10px] font-bold tracking-widest uppercase text-white/80">
+                {genreLabels[kit.genre]}
+              </span>
+              <button
+                onClick={() => setLiked(!liked)}
+                className="p-2 rounded-full bg-white/[0.08] backdrop-blur-xl border border-white/[0.08] btn-press"
+              >
+                <Heart className={`w-4 h-4 transition-all duration-300 ${liked ? "fill-puchk-orange text-puchk-orange animate-heart-burst" : "text-white/60"}`} />
+              </button>
+            </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-[0_2px_30px_rgba(0,0,0,0.8)]">
               {kit.name}
             </h1>
@@ -80,9 +90,9 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
       </div>
 
       {/* === Main 2-column layout === */}
-      <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 lg:grid-cols-5 gap-12">
+      <div className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-5 gap-12">
         {/* Left column (58%) */}
-        <div className="lg:col-span-3 space-y-16">
+        <div className="lg:col-span-3 space-y-20">
           {/* Description */}
           {kit.description && (
             <ScrollReveal>
@@ -102,7 +112,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05, duration: 0.5 }}
-                  className="bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-colors"
+                  className="bg-[var(--bg-surface)] rounded-xl p-3 border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,107,26,0.06)]"
                 >
                   <span className="text-xl block mb-1">{c.icon}</span>
                   <span className="text-xs font-medium text-secondary-puchk">{c.name}</span>
@@ -129,6 +139,22 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
                   <span className="text-xs text-secondary-puchk mt-1 block">{kit.reviews} avis</span>
                 </div>
               </div>
+              {/* Star distribution */}
+              <div className="space-y-2 mb-8">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const pct = star === 5 ? 65 : star === 4 ? 20 : star === 3 ? 10 : star === 2 ? 3 : 2;
+                  return (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs text-secondary-puchk w-3">{star}</span>
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-puchk-orange rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-secondary-puchk w-8 text-right">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
               <div className="space-y-4">
                 {reviews.map((r, i) => (
                   <motion.div
@@ -137,7 +163,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.08, duration: 0.6 }}
-                    className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-xl p-5"
+                    className="liquid-glass rounded-xl p-5"
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-8 h-8 rounded-full bg-puchk-orange/15 flex items-center justify-center text-xs font-bold text-puchk-orange">
@@ -162,8 +188,18 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
 
           {/* Similar Kits */}
           <ScrollReveal delay={0.2}>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-puchk-orange mb-5">Kits similaires</h2>
-            <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-puchk-orange">Kits similaires</h2>
+              <div className="flex gap-2">
+                <button onClick={() => similarScrollRef.current?.scrollBy({ left: -280, behavior: "smooth" })} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+                  <ChevronLeft className="w-4 h-4 text-white/50" />
+                </button>
+                <button onClick={() => similarScrollRef.current?.scrollBy({ left: 280, behavior: "smooth" })} className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center hover:bg-white/10 transition-colors btn-press">
+                  <ChevronRight className="w-4 h-4 text-white/50" />
+                </button>
+              </div>
+            </div>
+            <div ref={similarScrollRef} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
               {similarKits.slice(0, 4).map((k, i) => (
                 <div key={k.id} className="min-w-[220px] max-w-[260px] flex-shrink-0">
                   <ProductCard kit={k} onPlay={onPlay} index={i} />
@@ -175,7 +211,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
 
         {/* Right column (42%) — sticky */}
         <div className="lg:col-span-2">
-          <div className="sticky top-24 bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 space-y-6">
+          <div className="sticky top-24 liquid-glass rounded-2xl p-6 space-y-6">
             <div className="text-4xl font-black text-puchk-orange">{licenses[selectedLicense].price}€</div>
 
             {/* Rating */}
@@ -198,7 +234,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
             {/* Tags */}
             <div className="flex flex-wrap gap-2">
               {[genreLabels[kit.genre], "WAV", "24-bit", "Royalty Free"].map((tag) => (
-                <span key={tag} className="px-2.5 py-1 rounded-full border border-puchk-orange/15 text-[10px] text-puchk-orange uppercase tracking-wider">
+                <span key={tag} className="px-2.5 py-1 rounded-full border border-puchk-orange/15 text-[10px] text-puchk-orange uppercase tracking-wider hover:bg-puchk-orange/[0.05] hover:backdrop-blur-sm transition-all tag-flash cursor-pointer">
                   {tag}
                 </span>
               ))}
@@ -232,19 +268,24 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
                   }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-sm">{lic.name}</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selectedLicense === i ? "border-puchk-orange" : "border-white/20"}`}>
+                        {selectedLicense === i && <div className="w-2 h-2 rounded-full bg-puchk-orange" />}
+                      </div>
+                      <span className="font-bold text-sm">{lic.name}</span>
+                    </div>
                     <span className="font-bold text-puchk-orange">{lic.price}€</span>
                   </div>
-                  <p className="text-xs text-secondary-puchk mt-1">{lic.description}</p>
+                  <p className="text-xs text-secondary-puchk mt-1 ml-6">{lic.description}</p>
                 </button>
               ))}
             </div>
 
             {/* CTA */}
-            <button className="w-full h-14 bg-puchk-orange text-white font-bold text-sm rounded-xl hover:bg-puchk-orange-hover transition-colors animate-pulse-glow btn-press">
+            <button className="w-full h-14 bg-puchk-orange text-white font-bold text-sm rounded-xl hover:bg-puchk-orange-hover hover:scale-[1.02] transition-all animate-pulse-glow btn-press">
               Acheter — {licenses[selectedLicense].price}€
             </button>
-            <button className="w-full h-12 bg-white/5 border border-white/[0.08] font-medium text-sm rounded-xl hover:text-puchk-orange hover:border-white/[0.15] transition-all flex items-center justify-center gap-2 btn-press">
+            <button className="w-full h-12 liquid-glass font-medium text-sm rounded-xl hover:text-puchk-orange hover:border-white/[0.15] transition-all flex items-center justify-center gap-2 btn-press">
               <ShoppingBag className="w-4 h-4" /> Ajouter au panier
             </button>
 
@@ -267,7 +308,7 @@ const ProductPage = ({ onPlay }: ProductPageProps) => {
       </div>
 
       {/* Mobile sticky buy bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0D0D0D]/95 backdrop-blur-2xl border-t border-white/[0.06] p-3 flex items-center justify-between gap-3">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 liquid-glass-strong p-3 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs text-secondary-puchk">{licenses[selectedLicense].name}</div>
           <div className="text-xl font-black text-puchk-orange">{licenses[selectedLicense].price}€</div>
