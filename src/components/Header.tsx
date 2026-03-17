@@ -37,6 +37,7 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [themeRotating, setThemeRotating] = useState(false);
   const location = useLocation();
   const { view, setView } = useView();
   const { theme, toggleTheme } = useTheme();
@@ -57,18 +58,27 @@ const Header = () => {
     return location.pathname.startsWith(path);
   };
 
-  const headerBg = scrollProgress > 0
-    ? `rgba(13,13,13,${0.5 + scrollProgress * 0.4})`
-    : "transparent";
+  const handleThemeToggle = () => {
+    setThemeRotating(true);
+    toggleTheme();
+    setTimeout(() => setThemeRotating(false), 500);
+  };
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 transition-all duration-300 border-b backdrop-blur-xl"
+      className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 transition-all duration-500"
       style={{
-        backgroundColor: headerBg,
-        borderBottomColor: scrolled ? "rgba(255,107,26,0.12)" : "transparent",
+        background: scrollProgress > 0
+          ? `rgba(13,13,13,${0.4 + scrollProgress * 0.5})`
+          : "rgba(255,255,255,0.03)",
+        backdropFilter: `blur(${12 + scrollProgress * 28}px)`,
+        WebkitBackdropFilter: `blur(${12 + scrollProgress * 28}px)`,
+        borderBottom: `1px solid rgba(255,255,255,${0.04 + scrollProgress * 0.04})`,
       }}
     >
+      {/* Reflet lumineux */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent pointer-events-none" />
+
       <Link to="/" className="flex items-center gap-2.5 mr-8">
         <div className="w-9 h-9 rounded-lg bg-puchk-orange flex items-center justify-center shadow-[0_0_15px_rgba(255,107,26,0.4)]">
           <span className="text-white font-extrabold text-lg">P</span>
@@ -98,15 +108,17 @@ const Header = () => {
       <div className="ml-auto flex items-center gap-3">
         {/* Theme toggle */}
         <button
-          onClick={toggleTheme}
+          onClick={handleThemeToggle}
           className="p-2 rounded-xl hover:bg-white/5 spring-transition btn-press"
           title={theme === "dark" ? "Mode clair" : "Mode sombre"}
         >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5 text-white/60" />
-          ) : (
-            <Moon className="w-5 h-5 text-white/60" />
-          )}
+          <div className={themeRotating ? "animate-theme-rotate" : ""}>
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5 text-white/60" />
+            ) : (
+              <Moon className="w-5 h-5 text-white/60" />
+            )}
+          </div>
         </button>
 
         {/* View Switcher */}
@@ -129,18 +141,18 @@ const Header = () => {
         <Link to="/marketplace" className="p-2 rounded-xl hover:bg-white/5 spring-transition">
           <Search className="w-5 h-5 text-white/60" />
         </Link>
-        <button className="relative p-2 rounded-xl hover:bg-white/5 spring-transition">
-          <Bell className="w-5 h-5 text-white/60" />
+        <button className="relative p-2 rounded-xl hover:bg-white/5 spring-transition group">
+          <Bell className="w-5 h-5 text-white/60 group-hover:text-white/80 transition-colors" />
           <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
         </button>
-        <Link to="/cart" className="relative p-2 rounded-xl hover:bg-white/5 spring-transition">
-          <ShoppingBag className="w-5 h-5 text-white/60" />
+        <Link to="/cart" className="relative p-2 rounded-xl hover:bg-white/5 spring-transition group">
+          <ShoppingBag className="w-5 h-5 text-white/60 group-hover:text-white/80 transition-colors" />
           <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-puchk-orange text-[9px] font-bold text-white flex items-center justify-center">2</div>
         </Link>
 
         <div className="relative">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/5 spring-transition">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-puchk-orange to-puchk-orange-hover flex items-center justify-center">
+          <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/5 spring-transition group">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-puchk-orange to-puchk-orange-hover flex items-center justify-center group-hover:animate-ring-pulse transition-shadow">
               <span className="text-white text-xs font-bold">KX</span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-white/40" />
@@ -153,17 +165,17 @@ const Header = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 8 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="absolute right-0 top-12 w-56 glass rounded-xl p-2 shadow-xl"
+                className="absolute right-0 top-12 w-56 liquid-glass rounded-2xl p-2 shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
               >
                 <div className="px-3 py-2 border-b border-white/5 mb-1">
                   <p className="text-sm font-bold text-white">KXZMA</p>
                   <p className="text-[11px] text-white/40">kxzma@puchk.io</p>
                 </div>
-                <Link to="/dashboard" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-                <Link to="/library" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Mon Compte</Link>
-                <Link to="/marketplace" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Marketplace</Link>
+                <Link to="/dashboard" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/[0.08] rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+                <Link to="/library" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/[0.08] rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Mon Compte</Link>
+                <Link to="/marketplace" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/[0.08] rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Marketplace</Link>
                 {view === "admin" && (
-                  <Link to="/admin" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/5 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Admin Panel</Link>
+                  <Link to="/admin" className="block px-3 py-2 text-sm text-white/70 hover:text-puchk-orange hover:bg-white/[0.08] rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>Admin Panel</Link>
                 )}
                 <div className="border-t border-white/5 mt-1 pt-1">
                   <Link to="/auth/login" className="w-full text-left block px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg spring-transition" onClick={() => setMenuOpen(false)}>

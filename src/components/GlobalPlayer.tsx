@@ -40,8 +40,11 @@ const GlobalPlayer = ({ kit, onClose }: GlobalPlayerProps) => {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="fixed bottom-0 left-0 right-0 h-20 bg-[#0D0D0D]/95 backdrop-blur-2xl border-t border-white/6 z-50 flex items-center px-6 gap-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+      className="fixed bottom-0 left-0 right-0 h-20 liquid-glass-strong z-50 flex items-center px-6 gap-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
     >
+      {/* Orange reflet on top */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-puchk-orange/10 to-transparent pointer-events-none" />
+
       {/* Cover */}
       <div className="flex items-center gap-3 w-[18%] min-w-[140px]">
         <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
