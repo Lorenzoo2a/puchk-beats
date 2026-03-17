@@ -100,12 +100,12 @@ const MiniPlayer = ({ kit, onPlay }: { kit: Kit; onPlay: (k: Kit) => void }) => 
 
 /* ── Testimonials data ── */
 const testimonials = [
-  { text: "PUCHK a changé ma façon de vendre mes kits.", user: "@KXZMA", role: "Vendeur", emoji: "🔥" },
-  { text: "Les kits sont de qualité studio. Rien à voir avec les autres marketplaces.", user: "@xMelo", role: "Acheteur", emoji: "🎧" },
-  { text: "J'ai fait mes premiers 1000€ en 2 semaines sur PUCHK.", user: "@OZKR", role: "Vendeur", emoji: "💰" },
-  { text: "L'interface est propre, le téléchargement est instantané.", user: "@BeatsByJay", role: "Acheteur", emoji: "⚡" },
-  { text: "Le Puchk Tool m'a fait gagner des heures sur l'organisation de mes kits.", user: "@mochiprod", role: "Vendeur", emoji: "🛠" },
-  { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", emoji: "✨" },
+  { text: "PUCHK a changé ma façon de vendre mes kits.", user: "@KXZMA", role: "Vendeur", icon: Flame },
+  { text: "Les kits sont de qualité studio. Rien à voir avec les autres marketplaces.", user: "@xMelo", role: "Acheteur", icon: Headphones },
+  { text: "J'ai fait mes premiers 1000€ en 2 semaines sur PUCHK.", user: "@OZKR", role: "Vendeur", icon: DollarSign },
+  { text: "L'interface est propre, le téléchargement est instantané.", user: "@BeatsByJay", role: "Acheteur", icon: Zap },
+  { text: "Le Puchk Tool m'a fait gagner des heures sur l'organisation de mes kits.", user: "@mochiprod", role: "Vendeur", icon: Wrench },
+  { text: "Enfin une marketplace faite PAR des producteurs POUR des producteurs.", user: "@DriftKing", role: "Acheteur", icon: Sparkles },
 ];
 
 /* ── Hero slides config — Puchk Tool first ── */
