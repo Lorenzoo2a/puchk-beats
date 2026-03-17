@@ -35,17 +35,22 @@ const AnimCounter = ({ target, suffix = "" }: { target: number; suffix?: string 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
-/* ── Constellation Canvas Background ── */
-const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
+/* ── Liquid Metaball Canvas Background ── */
+const LiquidCanvas = ({ mousePos }: { mousePos: { x: number; y: number } | null }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Array<{
-    x: number; y: number; vx: number; vy: number; baseX: number; baseY: number; size: number; opacity: number;
-  }>>([]);
-  const haloRef = useRef({ x: 0.5, y: 0.5 });
   const mousePosRef = useRef(mousePos);
   const animFrameRef = useRef<number>(0);
+  const timeRef = useRef(0);
 
   mousePosRef.current = mousePos;
+
+  // Metaball blobs — organic shapes drifting
+  const blobsRef = useRef<Array<{
+    x: number; y: number; r: number;
+    vx: number; vy: number;
+    baseR: number;
+    phase: number; freqX: number; freqY: number;
+  }>>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,162 +58,138 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let cw = 0, ch = 0;
+
     const resize = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
       if (rect) {
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        cw = rect.width;
+        ch = rect.height;
+        canvas.width = cw * window.devicePixelRatio;
+        canvas.height = ch * window.devicePixelRatio;
+        canvas.style.width = `${cw}px`;
+        canvas.style.height = `${ch}px`;
       }
     };
     resize();
     window.addEventListener("resize", resize);
 
-    // Init particles
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const count = 100;
-    particlesRef.current = Array.from({ length: count }, () => {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
-      return {
-        x, y, baseX: x, baseY: y,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: 1.2 + Math.random() * 1.3,
-        opacity: 0.12 + Math.random() * 0.15,
-      };
-    });
-
-    const CONNECTION_DIST = 160;
-    const MOUSE_RADIUS = 200;
+    // Init blobs
+    blobsRef.current = Array.from({ length: 7 }, (_, i) => ({
+      x: 0.1 + Math.random() * 0.8,
+      y: 0.1 + Math.random() * 0.8,
+      r: 0.06 + Math.random() * 0.08,
+      baseR: 0.06 + Math.random() * 0.08,
+      vx: (Math.random() - 0.5) * 0.0003,
+      vy: (Math.random() - 0.5) * 0.0003,
+      phase: Math.random() * Math.PI * 2,
+      freqX: 0.3 + Math.random() * 0.4,
+      freqY: 0.2 + Math.random() * 0.5,
+    }));
 
     const animate = () => {
-      const cw = canvas.clientWidth;
-      const ch = canvas.clientHeight;
-      // Fade trail instead of full clear for a glow trail effect
-      ctx.fillStyle = "rgba(0,0,0,0.15)";
-      ctx.fillRect(0, 0, cw, ch);
-
+      if (!cw || !ch) { animFrameRef.current = requestAnimationFrame(animate); return; }
+      timeRef.current += 0.008;
+      const t = timeRef.current;
+      const dpr = window.devicePixelRatio;
       const mp = mousePosRef.current;
-      const mx = mp ? mp.x * cw : -9999;
-      const my = mp ? mp.y * ch : -9999;
+      const blobs = blobsRef.current;
 
-      // Lerp halo toward mouse
-      if (mp) {
-        haloRef.current.x += (mp.x - haloRef.current.x) * 0.08;
-        haloRef.current.y += (mp.y - haloRef.current.y) * 0.08;
-      }
+      // Update blob positions — organic drift
+      for (const b of blobs) {
+        b.x += b.vx + Math.sin(t * b.freqX + b.phase) * 0.0004;
+        b.y += b.vy + Math.cos(t * b.freqY + b.phase) * 0.0003;
 
-      // Draw halo that follows mouse
-      const hx = haloRef.current.x * cw;
-      const hy = haloRef.current.y * ch;
-      const haloGrad = ctx.createRadialGradient(hx, hy, 0, hx, hy, 280);
-      haloGrad.addColorStop(0, mp ? "rgba(255,107,26,0.12)" : "rgba(255,107,26,0.04)");
-      haloGrad.addColorStop(0.5, mp ? "rgba(255,107,26,0.04)" : "rgba(255,107,26,0.01)");
-      haloGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = haloGrad;
-      ctx.fillRect(0, 0, cw, ch);
+        // Soft bounce
+        if (b.x < 0.02 || b.x > 0.98) b.vx *= -1;
+        if (b.y < 0.02 || b.y > 0.98) b.vy *= -1;
+        b.x = Math.max(0.02, Math.min(0.98, b.x));
+        b.y = Math.max(0.02, Math.min(0.98, b.y));
 
-      const particles = particlesRef.current;
+        // Breathe
+        b.r = b.baseR + Math.sin(t * 1.5 + b.phase) * 0.015;
 
-      // Update positions
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Bounce
-        if (p.x < 0 || p.x > cw) p.vx *= -1;
-        if (p.y < 0 || p.y > ch) p.vy *= -1;
-        p.x = Math.max(0, Math.min(cw, p.x));
-        p.y = Math.max(0, Math.min(ch, p.y));
-
-        // Mouse attraction — stronger pull
+        // React to mouse — blobs expand and move toward cursor
         if (mp) {
-          const dx = mx - p.x;
-          const dy = my - p.y;
+          const dx = mp.x - b.x;
+          const dy = mp.y - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < MOUSE_RADIUS && dist > 0) {
-            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS * 1.5;
-            p.x += dx / dist * force;
-            p.y += dy / dist * force;
+          if (dist < 0.3) {
+            const pull = (0.3 - dist) * 0.008;
+            b.x += dx * pull;
+            b.y += dy * pull;
+            b.r += (0.3 - dist) * 0.04; // swell near mouse
           }
         }
       }
 
-      // Draw connections (spatial grid optimization)
-      const gridSize = CONNECTION_DIST;
-      const grid: Map<string, number[]> = new Map();
-      for (let i = 0; i < particles.length; i++) {
-        const gx = Math.floor(particles[i].x / gridSize);
-        const gy = Math.floor(particles[i].y / gridSize);
-        const key = `${gx},${gy}`;
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key)!.push(i);
-      }
+      // Render metaballs using offscreen pixel manipulation for liquid effect
+      const imgData = ctx.createImageData(canvas.width, canvas.height);
+      const data = imgData.data;
+      const step = 3; // sample every 3rd pixel for performance
 
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        const gx = Math.floor(p.x / gridSize);
-        const gy = Math.floor(p.y / gridSize);
+      for (let py = 0; py < canvas.height; py += step) {
+        for (let px = 0; px < canvas.width; px += step) {
+          const nx = px / (cw * dpr);
+          const ny = py / (ch * dpr);
 
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const neighbors = grid.get(`${gx + dx},${gy + dy}`);
-            if (!neighbors) continue;
-            for (const j of neighbors) {
-              if (j <= i) continue;
-              const q = particles[j];
-              const ddx = p.x - q.x;
-              const ddy = p.y - q.y;
-              const dist = Math.sqrt(ddx * ddx + ddy * ddy);
-              if (dist < CONNECTION_DIST) {
-                const alpha = (1 - dist / CONNECTION_DIST) * 0.08;
-                let lineAlpha = alpha;
-                if (mp) {
-                  const midX = (p.x + q.x) / 2;
-                  const midY = (p.y + q.y) / 2;
-                  const mouseDist = Math.sqrt((midX - mx) ** 2 + (midY - my) ** 2);
-                  if (mouseDist < MOUSE_RADIUS) {
-                    lineAlpha = alpha + (1 - mouseDist / MOUSE_RADIUS) * 0.25;
-                  }
-                }
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(q.x, q.y);
-                ctx.strokeStyle = `rgba(255,107,26,${lineAlpha})`;
-                ctx.lineWidth = 0.6;
-                ctx.stroke();
+          // Sum metaball field
+          let field = 0;
+          for (const b of blobs) {
+            const dx = nx - b.x;
+            const dy = ny - b.y;
+            const distSq = dx * dx + dy * dy;
+            field += (b.r * b.r) / (distSq + 0.0001);
+          }
+
+          // Mouse blob contribution
+          if (mp) {
+            const dx = nx - mp.x;
+            const dy = ny - mp.y;
+            const distSq = dx * dx + dy * dy;
+            field += 0.004 / (distSq + 0.0001);
+          }
+
+          // Threshold → liquid surface
+          if (field > 6) {
+            const intensity = Math.min(1, (field - 6) * 0.15);
+            const edgeFactor = field < 8 ? (field - 6) / 2 : 1; // edge glow
+
+            // Orange tint — brighter at edges (liquid caustics)
+            const r = 255;
+            const g = 107;
+            const bv = 26;
+            const alpha = intensity * 0.12 * (0.5 + edgeFactor * 0.5);
+
+            // Fill the step×step block
+            for (let sy = 0; sy < step && py + sy < canvas.height; sy++) {
+              for (let sx = 0; sx < step && px + sx < canvas.width; sx++) {
+                const idx = ((py + sy) * canvas.width + (px + sx)) * 4;
+                data[idx] = r;
+                data[idx + 1] = g;
+                data[idx + 2] = bv;
+                data[idx + 3] = Math.floor(alpha * 255);
+              }
+            }
+          }
+
+          // Subtle edge glow ring
+          if (field > 5.5 && field < 6.5) {
+            const edgeAlpha = 0.08 * (1 - Math.abs(field - 6) / 0.5);
+            for (let sy = 0; sy < step && py + sy < canvas.height; sy++) {
+              for (let sx = 0; sx < step && px + sx < canvas.width; sx++) {
+                const idx = ((py + sy) * canvas.width + (px + sx)) * 4;
+                data[idx] = 255;
+                data[idx + 1] = 140;
+                data[idx + 2] = 50;
+                data[idx + 3] = Math.max(data[idx + 3], Math.floor(edgeAlpha * 255));
               }
             }
           }
         }
       }
 
-      // Draw particles — bigger + glowing near mouse
-      for (const p of particles) {
-        let drawSize = p.size;
-        let drawOpacity = p.opacity;
-        if (mp) {
-          const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
-          if (dist < MOUSE_RADIUS) {
-            const proximity = 1 - dist / MOUSE_RADIUS;
-            drawSize = p.size + proximity * 3;
-            drawOpacity = Math.min(0.6, p.opacity + proximity * 0.35);
-            // Glow
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, drawSize * 3, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,107,26,${proximity * 0.06})`;
-            ctx.fill();
-          }
-        }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, drawSize, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,107,26,${drawOpacity})`;
-        ctx.fill();
-      }
+      ctx.putImageData(imgData, 0, 0);
 
       animFrameRef.current = requestAnimationFrame(animate);
     };
@@ -221,7 +202,7 @@ const ConstellationCanvas = ({ mousePos }: { mousePos: { x: number; y: number } 
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-[0]" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-[0]" />; 
 };
 
 /* ── Scroll reveal wrapper ── */
@@ -543,20 +524,12 @@ const HomePage = ({ onPlay }: HomePageProps) => {
         onMouseLeave={handleHeroMouseLeave}
         onMouseMove={handleHeroMouseMove}
       >
-        {/* Constellation canvas background */}
-        <ConstellationCanvas mousePos={mousePos} />
+        {/* Liquid metaball background */}
+        <LiquidCanvas mousePos={mousePos} />
 
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)]/20 via-transparent to-[var(--bg-base)] z-[1] pointer-events-none" />
         <div className="absolute inset-0 noise-overlay z-[1] pointer-events-none" />
-
-        {/* Halo */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-[0]"
-          style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(255,107,26,0.06) 0%, transparent 50%)",
-            animation: "halo-pulse 6s ease-in-out infinite",
-          }}
-        />
 
         <AnimatePresence mode="wait">
           {renderSlide(currentSlide)}
