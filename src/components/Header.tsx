@@ -30,10 +30,10 @@ const navByView: Record<ViewMode, { label: string; path: string; external?: bool
   ],
 };
 
-const viewLabels: { key: ViewMode; emoji: string; label: string }[] = [
-  { key: "buyer", emoji: "👤", label: "Acheteur" },
-  { key: "seller", emoji: "💰", label: "Vendeur" },
-  { key: "admin", emoji: "⚙️", label: "Admin" },
+const viewLabels: { key: ViewMode; Icon: typeof User; label: string }[] = [
+  { key: "buyer", Icon: User, label: "Acheteur" },
+  { key: "seller", Icon: DollarSign, label: "Vendeur" },
+  { key: "admin", Icon: Settings, label: "Admin" },
 ];
 
 const Header = () => {
