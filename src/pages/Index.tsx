@@ -212,9 +212,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
       case "kit":
         return (
           <motion.div className="relative z-[2] max-w-6xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center gap-12 h-full justify-center" key="slide-kit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <div className="flex-1 max-w-xl">
+            <div className="flex-1 max-w-xl bg-black/30 backdrop-blur-sm rounded-2xl p-6">
               <motion.h1
                 className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter text-puchk-orange animate-pulse-text-glow leading-[0.85]"
+                style={titleShadow}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
@@ -230,7 +231,7 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                   </motion.span>
                 ))}
               </motion.h1>
-              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <motion.p className="text-lg text-secondary-puchk mt-6 mb-8 leading-relaxed" style={subtitleShadow} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                 Les meilleurs drum kits du game.
               </motion.p>
               <motion.div className="flex gap-3 mb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
@@ -248,10 +249,10 @@ const HomePage = ({ onPlay }: HomePageProps) => {
                   { value: 25000, label: "ventes", suffix: "+" },
                 ].map((s) => (
                   <div key={s.label}>
-                    <div className="text-3xl font-black tracking-tight">
+                    <div className="text-3xl font-black tracking-tight" style={titleShadow}>
                       <AnimCounter target={s.value} suffix={s.suffix} />
                     </div>
-                    <div className="text-xs text-secondary-puchk mt-1">{s.label}</div>
+                    <div className="text-xs text-secondary-puchk mt-1" style={subtitleShadow}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -282,9 +283,6 @@ const HomePage = ({ onPlay }: HomePageProps) => {
               </div>
             </motion.div>
           </motion.div>
-        );
-
-      case "producers":
         return (
           <motion.div className="relative z-[2] max-w-3xl mx-auto px-6 w-full text-center flex flex-col items-center justify-center h-full" key="slide-producers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: "easeOut" }}>
             <motion.div className="w-16 h-16 rounded-2xl bg-puchk-orange/10 border border-puchk-orange/20 flex items-center justify-center mx-auto mb-6" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring" }}>
